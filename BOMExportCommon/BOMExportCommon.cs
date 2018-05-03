@@ -33,7 +33,7 @@ namespace BOMExportCommon {
         eDataBase = 0,
         eXls = 1,
         eOther = 2,
-        eXmls =3
+        eXml =3
     }
     /// <summary>
     /// Interface 的摘要说明。
@@ -51,7 +51,7 @@ namespace BOMExportCommon {
         /// <returns>如果成功，返回true；否则返回false</returns>
         /// <remarks>
         /// </remarks>
-        bool ExportPSToERP(DEExportEvent expEvent, DEErpExport deErp, out StringBuilder strErrInfo, out StringBuilder strWarning, out DataSet ds, Object Inobjs, out Object outObjects);
+        bool ExportPSToERP(DEExportEvent expEvent, DEErpExport deErp, out StringBuilder strErrInfo, out StringBuilder strWarning, out List<DataSet> ds, Object Inobjs, out Object outObjects);
 
         /// <summary>
         /// 获取可用ERP导出程序

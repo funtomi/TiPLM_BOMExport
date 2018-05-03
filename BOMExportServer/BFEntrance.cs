@@ -55,7 +55,7 @@ namespace BOMExportServer {
         /// <remarks>
         /// </remarks>
         public bool ExportPSToERP(DEExportEvent expEvent, DEErpExport deErp, out StringBuilder strErrInfo,
-            out StringBuilder strWarnInfo, out DataSet ds, object InObjs, out object outObjs) {
+            out StringBuilder strWarnInfo, out List<DataSet> ds, object InObjs, out object outObjs) {
             DBParameter dbParam = DBUtil.GetDbParameter(true);
             try {
                 dbParam.Open();
@@ -145,6 +145,9 @@ namespace BOMExportServer {
                                     deErp.op = ExpOption.eOther;
                                 else if (strOp.ToUpper() == "Excel".ToUpper())
                                     deErp.op = ExpOption.eXls;
+                                else if (strOp.ToUpper() == "Xml".ToUpper()) {
+                                    deErp.op = ExpOption.eXml;   
+                                }
                                 else
                                     deErp.op = ExpOption.eDataBase;
                             }

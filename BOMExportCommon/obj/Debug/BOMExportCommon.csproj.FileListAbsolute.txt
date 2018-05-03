@@ -3,3 +3,7 @@ E:\2018\青岛三合山\Code\BOMExport\Export\BOMExportCommon.pdb
 E:\2018\青岛三合山\Code\BOMExport\BOMExportCommon\obj\Debug\BOMExportCommon.csprojResolveAssemblyReference.cache
 E:\2018\青岛三合山\Code\BOMExport\BOMExportCommon\obj\Debug\BOMExportCommon.dll
 E:\2018\青岛三合山\Code\BOMExport\BOMExportCommon\obj\Debug\BOMExportCommon.pdb
+E:\2018\青岛三合山\Code\BOMExport\TiPLM_BOMExport\Export\BOMExportCommon.dll
+E:\2018\青岛三合山\Code\BOMExport\TiPLM_BOMExport\Export\BOMExportCommon.pdb
+E:\2018\青岛三合山\Code\BOMExport\TiPLM_BOMExport\BOMExportCommon\obj\Debug\BOMExportCommon.dll
+E:\2018\青岛三合山\Code\BOMExport\TiPLM_BOMExport\BOMExportCommon\obj\Debug\BOMExportCommon.pdb

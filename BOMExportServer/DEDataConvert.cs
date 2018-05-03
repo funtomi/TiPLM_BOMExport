@@ -200,10 +200,7 @@ namespace BOMExportServer {
         /// 记录关键列的列映射
         /// </summary>
         public ColumnMappingItem ID_Item;
-
-
-
-
+         
         /// <summary>
         /// 数据是否导出(新增加内容)
         /// </summary>

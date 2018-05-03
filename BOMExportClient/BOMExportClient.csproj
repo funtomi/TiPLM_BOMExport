@@ -46,6 +46,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Export\Thyt.TiPLM.Common.Interface.dll</HintPath>
     </Reference>
+    <Reference Include="Thyt.TiPLM.DEL.Admin.DataModel, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\tiplm\PLMClient\Thyt.TiPLM.DEL.Admin.DataModel.DLL</HintPath>
+    </Reference>
     <Reference Include="Thyt.TiPLM.DEL.Admin.NewResponsibility, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Export\Thyt.TiPLM.DEL.Admin.NewResponsibility.DLL</HintPath>
@@ -53,6 +57,10 @@
     <Reference Include="Thyt.TiPLM.DEL.Product, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Export\Thyt.TiPLM.DEL.Product.DLL</HintPath>
+    </Reference>
+    <Reference Include="Thyt.TiPLM.PLL.Admin.DataModel, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\tiplm\PLMClient\Thyt.TiPLM.PLL.Admin.DataModel.DLL</HintPath>
     </Reference>
     <Reference Include="Thyt.TiPLM.PLL.Admin.NewResponsibility, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

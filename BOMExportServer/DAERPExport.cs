@@ -129,7 +129,7 @@ namespace BOMExportServer {
         /// <returns>如果成功，返回true；否则返回false</returns>
         public bool ExportPSToERP(DEExportEvent exp, out StringBuilder strErrinfo,
                                   out StringBuilder strWarnInfo, DEErpExport deErp,
-                                  out DataSet dsResult, object InObjs, out object outObjs) {
+                                  out List<DataSet> dsResult, object InObjs, out object outObjs) {
             string ERPConfig = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\" + deErp.configName;
 
             if (!File.Exists(ERPConfig))
@@ -139,9 +139,12 @@ namespace BOMExportServer {
             strEr = new StringBuilder();
             strWarn = new StringBuilder();
             strsuc = new StringBuilder();
-            dsResult = null;
+            dsResult = new List<DataSet>();
             outObjs = null;
-            DataSet ds = new DataSet();
+            DataSet bomSet = new DataSet("BOM");//BOM
+            DataSet operatorSet = new DataSet("Operation");//标准工序
+            DataSet inventorySet = new DataSet("inventory");//存货档案
+            DataSet routingSet = new DataSet("Routing");//工艺路线
 
             strErrinfo = strEr;
             strWarnInfo = strWarn;
@@ -156,17 +159,6 @@ namespace BOMExportServer {
             Errcmd.Connection = (OracleConnection)dbParam.Connection;
 
             DABomExport daExport = new DABomExport(dbParam);
-            //expEvent = daExport.GetExportEvent(expEvent.Oid);
-            //if (expEvent == null)
-            //    throw new PLMException("GetExportEvent无法获取到指定的导出事件信息，导出失败！");
-            /*
-                        if( deItem.ItemTable != null && deItem.ItemTable.IsExport && deItem.ItemTable.ID_Item == null )
-                            throw new Exception("在配置文件中没有设置物料导出所必须的“M.PLM_M_ID”字段,数据无法更新，导出中止");
-                        if( deItem.BomTable != null && deItem.BomTable.IsExport && deItem.BomTable.ID_Item == null )
-                            throw new Exception("在配置文件中没有设置Bom导出所必须的“PID”字段,数据无法更新，导出中止");
-                        if( deItem.BomHeadTable != null && deItem.BomHeadTable.IsExport && deItem.BomHeadTable.ID_Item == null )
-                            throw new Exception("在配置文件中没有设置BomHead导出所必须的“PID”字段,数据无法更新，导出中止");
-             * */
             // 获取根对象
             QRItem qrItem = new QRItem(dbParam);
             RevOccurrenceType revOccurrenceType;
@@ -188,11 +180,6 @@ namespace BOMExportServer {
                                                                      expEvent.PSOption.ConfigStatusRev, Guid.Empty, 0);
                 if (configStatus != null) configName = configStatus.Name;
             }
-            /*
-                        if( deItem.ItemTable != null && deItem.ItemTable.IsExport && !CheakItemCanExport(item.Master.ClassName) )
-                            throw new PLMException("不能导出数据类型为" + item.Master.ClassName +
-                                                   "的数据,只允许导出配置文件的<ItemColumnMapping :SourceColumn 中定义的类型或其子类型>");
-             * */
             RootID = item.Master.Id;
             now = DateTime.Now;
             CurSeq = GetCurrentSequence() + 1;
@@ -209,9 +196,7 @@ namespace BOMExportServer {
 
                 #endregion
 
-                //数据预处理与校验
-                //if( !string.IsNullOrEmpty(deItem.DP_FUN_NAME) )
-                //    DPERPData(deItem.DP_FUN_NAME);
+                //数据预处理与校验 
                 if (!string.IsNullOrEmpty(deItem.DP_BEFORE_NAME) && !deItem.IsExeDPAfterInterface)
                     DpBeforeExport(deItem.DP_BEFORE_NAME, item, expEvent.PSOption, expEvent.ExpOption.MaxLevel);
                 if (!String.IsNullOrEmpty(deErp.ExtendSVRDllName)) {
@@ -259,20 +244,9 @@ namespace BOMExportServer {
                 }
                 GetErrInfo();
                 if (strEr.Length > 0) {
-                    // GetErrInfo(eventOid);
                     strEr.Insert(0, "获取数据出错，数据导出停止\r\n");
                     return false;
-                }
-                try {
-                    if (deErp.op == ExpOption.eDataBase) {
-                        conn = GetERPConnection();
-                        conn.Open();
-                        trans = conn.BeginTransaction();
-                    }
-                } catch (Exception ex) {
-                    strEr.Insert(0, "建立到中间库的数据连接出错:" + ex.Message + "，数据导出停止\r\n连接字符串：" + deItem.DS.ConnStr);
-                    return false;
-                }
+                } 
                 if (type != null) {
                     IsRight = ExtendMidExport(type, hsItemTables, hsBomTables, hsRouteTables, conn, trans);
                 }
@@ -283,9 +257,6 @@ namespace BOMExportServer {
                     strEr.Insert(0, "获取数据出错，数据导出停止\r\n");
                     return false;
                 }
-
-                #region 导出到ERP临时表
-
                 IDictionaryEnumerator IE;
                 // 更新ITEM到ERP临时表
                 if (deItem.lstItemTables != null) {
@@ -295,13 +266,10 @@ namespace BOMExportServer {
                         DataTable tb = hsItemTables.Contains(mapping) ? (DataTable)hsItemTables[mapping] : null;
                         if (tb == null || tb.Rows.Count == 0) continue;
                         if (mapping.IsExport) {
-                            if (deErp.op == ExpOption.eDataBase)
-                                UpdateItemTable(mapping, tb, conn, trans);
-                            ds.Tables.Add(tb.Copy());
+                            bomSet.Tables.Add(tb.Copy());
                         }
                     }
                 }
-                // 更新BOM到ERP临时表
                 if (deItem.lstBomTables != null) {
                     for (int i = 0; i < deItem.lstBomTables.Count; i++) {
                         ItemColumnMapping mapping = deItem.lstBomTables[i] as ItemColumnMapping;
@@ -309,12 +277,11 @@ namespace BOMExportServer {
                         DataTable tb = hsBomTables.Contains(mapping) ? (DataTable)hsBomTables[mapping] : null;
                         if (tb == null || tb.Rows.Count == 0) continue;
                         if (mapping.IsExport) {
-                            if (deErp.op == ExpOption.eDataBase)
-                                UpdateTable(mapping, tb, conn, trans);
-                            ds.Tables.Add(tb.Copy());
+                            bomSet.Tables.Add(tb.Copy());
                         }
                     }
                 }
+                dsResult.Add(bomSet);
 
                 if (hsRouteTables.Count > 0) {
                     IE = hsRouteTables.GetEnumerator();
@@ -323,51 +290,15 @@ namespace BOMExportServer {
                         DataTable tb = IE.Value as DataTable;
                         ItemColumnMapping mapping = IE.Key as ItemColumnMapping;
                         if (mapping.IsExport) {
-                            if (deErp.op == ExpOption.eDataBase)
-                                UpdateTable(IE.Key, IE.Value, conn, trans);
-                            ds.Tables.Add(tb.Copy());
+                            routingSet.Tables.Add(tb.Copy());
 
                         }
                     }
                 }
-
-                if (!deItem.IsExeDPAllEnd && deItem.DP_END_NAME != "") {
-                    AfterExport();
-                }
-
-                if (type != null) {
-                    IsRight = ExtendAfterExport(type, out dsResult, out outObjs);
-                }
-                if (IsRight && deErp.op == ExpOption.eDataBase) {
-                    if (conn != null && !conn.State.Equals(ConnectionState.Closed))
-                        trans.Commit();
-                }
-
-                #endregion
-
-                if (dsResult == null && deErp.op != ExpOption.eDataBase)
-                    dsResult = ds;
-
-                if (IsFindSeq) SetCurrentSequence(CurSeq);
-
-                if (deItem.IsExeDPAllEnd && !String.IsNullOrEmpty(deItem.DP_END_NAME)) {
-                    AfterExport();
-                    GetErrInfo();
-                }
-                if (strEr.Length == 0 && deErp.op == ExpOption.eDataBase) {
-                    try {
-                        RecordExportHistory(deErp.IsExpOldItemAndBom);
-                    } catch (Exception et) {
-                        strWarn.Append("\r\n数据导出成功，但记录导出历史失败:" + et.Message + "\r\n");
-                    }
-                }
+                dsResult.Add(routingSet);
             } catch (Exception ex) {
-                if (deErp.op == ExpOption.eDataBase && (trans != null && !conn.State.Equals(ConnectionState.Closed)))
-                    trans.Rollback();
                 RecordErr(sOid, ex.ToString());
             } finally {
-                if (deErp.op == ExpOption.eDataBase && (conn != null && !conn.State.Equals(ConnectionState.Closed)))
-                    conn.Close();
                 daExport.ClearPS(sOid);
                 GetErrInfo();
             }
@@ -594,6 +525,10 @@ namespace BOMExportServer {
                 try {
                     try {
                         dr = cmd.ExecuteReader();
+                        OracleDataAdapter ada = new OracleDataAdapter(cmd);
+                        DataTable dt = new DataTable();
+                        ada.Fill(dt);
+                        dt = GetBOMVersionTable();
                     } catch (Exception ex1) {
                         RecordErr(sOid, ex1.Message + "出错sql语句：" + sql);
                         return null;
@@ -629,6 +564,17 @@ namespace BOMExportServer {
             CheckDataUnique(tbItem, ItemMapping);
 
             return tbItem;
+        }
+
+        private DataTable GetBOMVersionTable() {
+            var conn = (OracleConnection)dbParam.Connection; 
+                var sql = "select * from PLM_PSM_PS where PLM_SESSIONOID=@PLM_SESSIONOID";
+                var cmd = new OracleCommand(sql, conn);
+                cmd.Parameters.Add("@PLM_SESSIONOID", sOid.ToByteArray());
+                var ada = new OracleDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                ada.Fill(dt);
+                return dt; 
         }
 
 
@@ -691,8 +637,7 @@ namespace BOMExportServer {
                         break;
                     default:
                         //关系属性 
-                        if (item.curSrcItem.Value.StartsWith("R.") || item.curSrcItem.Value.StartsWith("PS."))
-                        {
+                        if (item.curSrcItem.Value.StartsWith("R.") || item.curSrcItem.Value.StartsWith("PS.")) {
                             //item.Value.Substring(2);
                             if (srcCols.Length > 0)
                                 srcCols.Append(",");
@@ -2044,214 +1989,6 @@ namespace BOMExportServer {
             #endregion
         }
 
-        /// <summary>
-        /// 更新物料表
-        /// </summary>
-        /// <param name="mapping"></param>
-        /// <param name="conn"></param>
-        /// <param name="trans"></param>
-        private void UpdateItemTable(ItemColumnMapping mapping, DataTable tb, IDbConnection conn, IDbTransaction trans) {
-            if (tb == null || tb.Rows.Count == 0)
-                return;
-            if (!mapping.IsUpdate) {
-                UpdateTable(mapping, tb, conn, trans);
-                return;
-            }
-            //			ArrayList lstIds = new ArrayList();
-            StringBuilder sql = new StringBuilder();
-            OleDbCommand icmd = (OleDbCommand)conn.CreateCommand();
-            OleDbCommand ucmd = (OleDbCommand)conn.CreateCommand();
-            OleDbCommand scmd = (OleDbCommand)conn.CreateCommand();
-            OleDbCommand dcmd = (OleDbCommand)conn.CreateCommand();
-            scmd.Transaction = trans as OleDbTransaction;
-            ucmd.Transaction = trans as OleDbTransaction;
-            icmd.Transaction = trans as OleDbTransaction;
-            //			dcmd.Transaction = trans as OleDbTransaction;
-
-            #region 获取已有数据
-
-            sql.Remove(0, sql.Length);
-            sql.Append(" select  * ");
-            //sql.Append(mapping.ID_Item.DestCol);
-            sql.Append(" from ");
-            sql.Append(mapping.TableName);
-
-            scmd.CommandText = sql.ToString();
-            //				OleDbDataReader rd = null;
-            //			try
-            //			{
-            //				rd = scmd.ExecuteReader();
-            //				while (rd.Read())
-            //				{
-            //					string id = rd.GetString(0);
-            //					if (!lstIds.Contains(id))
-            //						lstIds.Add(id);
-            //				}
-            //			}
-            //			finally
-            //			{
-            //				if (rd != null)
-            //					rd.Close();
-            //			}
-            //				//人为改变数据表中数据状态
-            //				for (int i = 0; i < tb.Rows.Count; i++)
-            //				{
-            //					string id = tb.Rows[i][mapping.ID_Item.DestCol].ToString();
-            //					if (lstIds.Contains(id))
-            //					{
-            //						tb.Rows[i].AcceptChanges();
-            //						tb.Rows[i][mapping.ID_Item.DestCol] = id;
-            //					}
-            //				}
-
-            #endregion
-
-            #region 更新已有数据
-
-            sql.Remove(0, sql.Length);
-            sql.Append("update " + mapping.TableName + " set ");
-            foreach (ColumnMappingItem item in mapping.MappingItemList) {
-                if (item.DestCol == mapping.ID_Item.DestCol)
-                    continue;
-                if (!tb.Columns.Contains(item.DestCol))
-                    continue;
-                if (!item.IsExport)
-                    continue;
-                sql.Append(item.DestCol);
-                sql.Append(" = ?,");
-            }
-            sql.Remove(sql.Length - 1, 1);
-            sql.Append("  where ");
-            sql.Append(mapping.ID_Item.DestCol);
-            sql.Append(" = ?  ");
-
-            ucmd.CommandText = sql.ToString();
-            foreach (ColumnMappingItem item in mapping.MappingItemList) {
-                if (item.DestCol == mapping.ID_Item.DestCol)
-                    continue;
-                if (!tb.Columns.Contains(item.DestCol))
-                    continue;
-                if (!item.IsExport)
-                    continue;
-                OleDbParameter p = ucmd.Parameters.Add("@" + item.DestCol, deItem.ConvertToOleDBType(item.DestDataType));
-                p.SourceColumn = item.DestCol;
-            }
-            OleDbParameter pId =
-                ucmd.Parameters.Add("@" + mapping.ID_Item.DestCol,
-                                    deItem.ConvertToOleDBType(mapping.ID_Item.DestDataType));
-            pId.SourceColumn = mapping.ID_Item.DestCol;
-
-            #endregion
-
-            #region 删除数据
-
-            //			sql.Remove(0, sql.Length);
-            //			sql.Append("delete from " + mapping.TableName );
-            //			foreach (ColumnMappingItem item in mapping.MappingItemList)
-            //			{
-            //				if (item.DestCol == mapping.ID_Item.DestCol)
-            //					continue;
-            //				if(!tb.Columns.Contains(item.DestCol ))
-            //					continue;
-            //				if(!item.IsExport)
-            //					continue;
-            //				sql.Append(item.DestCol);
-            //				sql.Append(" = ?,");
-            //			}
-            //			sql.Remove(sql.Length - 1, 1);
-            //			sql.Append("  where ");
-            //			sql.Append(mapping.ID_Item.DestCol);
-            //			sql.Append(" = ?  ");
-            //			OleDbParameter dId =
-            //				dcmd.Parameters.Add("@" + mapping.ID_Item.DestCol, deItem.ConvertToOleDBType(mapping.ID_Item.DestDataType));
-            //			dId.SourceColumn = mapping.ID_Item.DestCol;
-            //			if(colItemTime !="")
-            //			{
-            //				sql.Append(" and ");
-            //				sql.Append(colItemTime);
-            //				sql.Append(" = ?  ");
-            //				OleDbParameter dTime =
-            //					dcmd.Parameters.Add("@" + colItemTime, deItem.ConvertToOleDBType(colItemTimeType));
-            //				dTime.SourceColumn = colItemTime;
-            //			}
-            //			dcmd.CommandText = sql.ToString();
-
-            #endregion
-
-            #region  插入新数据
-
-            // 创建新的
-            sql.Remove(0, sql.Length);
-            sql.Append("INSERT INTO ");
-            sql.Append(mapping.TableName);
-            sql.Append("(");
-            foreach (ColumnMappingItem item in mapping.MappingItemList) {
-                if (!tb.Columns.Contains(item.DestCol))
-                    continue;
-                if (!item.IsExport)
-                    continue;
-                sql.Append(item.DestCol);
-                sql.Append(",");
-            }
-            sql.Remove(sql.Length - 1, 1);
-            sql.Append(") values (");
-
-            foreach (ColumnMappingItem item in mapping.MappingItemList) {
-                if (!tb.Columns.Contains(item.DestCol))
-                    continue;
-                if (!item.IsExport)
-                    continue;
-                sql.Append("?");
-                sql.Append(",");
-            }
-            sql.Remove(sql.Length - 1, 1);
-            sql.Append(")");
-            icmd.CommandText = sql.ToString();
-            icmd.Parameters.Clear();
-            foreach (ColumnMappingItem item in mapping.MappingItemList) {
-                if (!tb.Columns.Contains(item.DestCol))
-                    continue;
-                if (!item.IsExport)
-                    continue;
-                OleDbParameter p = new OleDbParameter("@" + item.DestCol, deItem.ConvertToOleDBType(item.DestDataType));
-                icmd.Parameters.Add(p);
-                p.SourceColumn = item.DestCol;
-            }
-            OleDbDataAdapter da = new OleDbDataAdapter();
-            da.InsertCommand = icmd;
-            da.UpdateCommand = ucmd;
-            da.SelectCommand = scmd;
-            //da.DeleteCommand = dcmd;
-
-            #endregion
-
-            DataTable tbI = new DataTable(mapping.TableName);
-            try {
-                da.Fill(tbI);
-                FillItemTableOfMidTable(tbI, tb, mapping);
-            } catch (Exception ex) {
-                PLMEventLog.WriteExceptionLog(ex);
-                throw new Exception("在更新中间表过程中，获取中间表" + mapping.TableName + " 数据失败:" + ex.Message + ":" + ex);
-            }
-
-            try {
-                da.Update(tbI);
-            } catch (Exception ex) {
-                PLMEventLog.WriteExceptionLog(ex);
-                string str2 = "更新中间表" + mapping.TableName + " 失败:" + ex.Message + ":" + ex.InnerException;
-                str2 += "\r\n 链接中间表 的链接字符串" + conn.ConnectionString;
-                str2 += "\r\n插入语句：" + da.InsertCommand.CommandText;
-                str2 += "\r\n更新语句：" + da.UpdateCommand.CommandText;
-                str2 += "\r\n获取语句：" + da.SelectCommand.CommandText;
-                RecordErr(sOid, str2);
-            } finally {
-                if (scmd != null) scmd.Dispose();
-                if (icmd != null) icmd.Dispose();
-                if (ucmd != null) ucmd.Dispose();
-                //	if (dcmd != null) dcmd.Dispose();
-                da.Dispose();
-            }
-        }
 
         private void FillItemTableOfMidTable(DataTable tbOrg, DataTable tbItem, ItemColumnMapping mapping) {
             tbItem.AcceptChanges();

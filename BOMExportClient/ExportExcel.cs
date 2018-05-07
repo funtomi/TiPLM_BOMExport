@@ -48,7 +48,7 @@ namespace BOMExportClient {
             for (int i = 0; i < ds.Tables.Count; i++) {
                 DataTable tb = ds.Tables[i];
                 string xlsFile = Path.Combine(xlsPath, tb.TableName + ".xls");
-                string newFile = Path.Combine(fPath, BomExportClient.item.Id + "_" + Path.GetFileName(xlsFile));
+                string newFile = Path.Combine(fPath, BomExportClient._item.Id + "_" + Path.GetFileName(xlsFile));
                 if (File.Exists(xlsFile)) {
                     ds.Tables.Remove(tb);
                     ds.AcceptChanges();

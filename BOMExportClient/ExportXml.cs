@@ -31,7 +31,7 @@ namespace BOMExportClient {
             try {
                 string xlsPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                 string fPath = Path.GetFullPath("..\\ExportFiles");
-                string newFile = Path.Combine(fPath, BomExportClient.item.Id + "_" + rootName + ".xml");
+                string newFile = Path.Combine(fPath, BomExportClient._item.Id + "_" + rootName + ".xml");
                 var doc = CreateXmlDocument(list, newFile, rootName);
                 doc.Save(newFile);
                 
@@ -59,41 +59,13 @@ namespace BOMExportClient {
                 newDoc.Load(newFile);
                 var node = doc.ImportNode(newDoc.DocumentElement, true);
                 string path = string.Format("ufinterface//{0}",rootName);
-                doc.SelectSingleNode(path).AppendChild(node.FirstChild);
+                for (int j = 0; j < node.ChildNodes.Count; j++) {
+                    var childNode = node.ChildNodes[j];
+                    doc.SelectSingleNode(path).AppendChild(childNode);
+                    j--;
+                }
             }
             return doc;
-        }
-
-        private static XmlDocument CreateBomXmlSchema(string str, string tableName) {
-            XmlDocument doc = new XmlDocument();
-            doc.Load(str);
-            doc = AddXmlSchema(doc, tableName);
-            return doc;
-        }
-
-        /// <summary>
-        /// 将datatable转为xml
-        /// </summary>
-        /// <param name="xmlDS"></param>
-        /// <returns></returns>
-        private static string ConvertDataTableToXML(DataTable xmlDS) {
-            MemoryStream stream = null;
-            XmlTextWriter writer = null;
-            try {
-                stream = new MemoryStream();
-                writer = new XmlTextWriter(stream, Encoding.Default);
-                xmlDS.WriteXml(writer);
-                int count = (int)stream.Length;
-                byte[] arr = new byte[count];
-                stream.Seek(0, SeekOrigin.Begin);
-                stream.Read(arr, 0, count);
-                var str = Encoding.ASCII.GetString(arr).Trim();
-                return str;
-            } catch {
-                return String.Empty;
-            } finally {
-                if (writer != null) writer.Close();
-            }
         }
 
         /// <summary>
@@ -115,7 +87,7 @@ namespace BOMExportClient {
 
             root.SetAttribute("receiver", "U8");//接收方 
             //档案或单据模版名，填档案或单据的唯一标识，如:客商档案：customer，客商分类：customerclass ，具体名称由总体确定，在数据交换中该名称要经常使用；
-            root.SetAttribute("roottag", tableName);
+            root.SetAttribute("roottag", GetRootTag(tableName));
             //proc：操作类型，分为“增删改查”，对应填Add / Delete /Edit /Query（必填），该字段导入操作，请填写Add / Delete /Edit，导出操作，请填写Query；
             root.SetAttribute("proc", "Edit");
             //编码是否已转换，该字段在导入的时候使用，如果已转换即已和U8基础数据编码一致填Y，将不会通过对照表的转换，如果没有转换即和U8基础数据编码不一致填N，将会自动通过对照表转换之后，进行相应的操作
@@ -128,12 +100,32 @@ namespace BOMExportClient {
             var tableNode = newDoc.CreateElement(tableName);
             
             var node = newDoc.ImportNode(doc.DocumentElement, true);
-            tableNode.AppendChild(node.FirstChild);
+            for (int j = 0; j < node.ChildNodes.Count; j++) {
+                var childNode = node.ChildNodes[j];
+                tableNode.AppendChild(childNode);
+                j--;
+            } 
+
             root.AppendChild(tableNode);
             newDoc.AppendChild(root);
             //doc.DocumentElement.InsertBefore(root, doc.DocumentElement.FirstChild);
             return newDoc;
 
+        }
+
+        private static string GetRootTag(string tableName) {
+            if (string.IsNullOrEmpty(tableName)) {
+                return "";
+            }
+            switch (tableName) {
+                default:
+                case "Bom":
+                    return "生成制造";
+                case "Operation":
+                    return "标准工序";
+                case "Routing":
+                    return "工艺路线";
+            }
         }
 
     }

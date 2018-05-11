@@ -30,6 +30,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Interop.MSXML2, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+      <HintPath>..\Export\Interop.MSXML2.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Windows.Forms" />
@@ -84,16 +89,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BaseDal.cs" />
     <Compile Include="BomExportClient.cs" />
     <Compile Include="ExportExcel.cs" />
     <Compile Include="ExportXml.cs" />
+    <Compile Include="InventoryDal.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\BOMExportCommon\BOMExportCommon.csproj">
-      <Project>{36b0fb90-fcef-418b-9bb4-02a620ee3f89}</Project>
-      <Name>BOMExportCommon</Name>
-    </ProjectReference>
+    <Compile Include="UnitGroupDal.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

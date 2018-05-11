@@ -4,13 +4,15 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Thyt.TiPLM.DEL.Product;
 
 namespace BOMExportClient {
     public class InventoryDal : BaseDal {
         public InventoryDal(DEBusinessItem dItem) {
-            this._dEBusinessItem = dItem;
+            _dEBusinessItem = dItem;
             this._name = "inventory";
+            _filePath = BuildFilePath(dItem, _name);
         }
         /// <summary>
         /// 父节点名
@@ -20,7 +22,7 @@ namespace BOMExportClient {
         }
 
         public List<DataTable> GetInventoryDataList() {
-            if (_dEBusinessItem==null||string.IsNullOrEmpty(_name)) {
+            if (_dEBusinessItem == null || string.IsNullOrEmpty(_name)) {
                 return null;
             }
             List<DataTable> list = new List<DataTable>();
@@ -28,18 +30,28 @@ namespace BOMExportClient {
             return list;
         }
 
-        private DataTable GetHeaderTable(DEBusinessItem _dEBusinessItem) {
-            if (_dEBusinessItem==null) {
+        /// <summary>
+        /// 获取header节点数据
+        /// </summary>
+        /// <param name="dEBusinessItem"></param>
+        /// <returns></returns>
+        private DataTable GetHeaderTable(DEBusinessItem dEBusinessItem) {
+            if (dEBusinessItem == null) {
                 return null;
             }
             var dt = BuildHeaderDt();
+            DataRow row = dt.NewRow();
             #region 特殊节点
 
             #endregion
 
             #region 普通节点，默认ERP列名和PLM列名一致
-
+            foreach (DataColumn col in dt.Columns) {
+                row[col] = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
+            }
             #endregion
+            dt.Rows.Add(row);
+            return dt;
         }
 
         /// <summary>
@@ -294,6 +306,53 @@ namespace BOMExportClient {
             dt.Columns.Add("btracksalebill", typeof(int));//	销售跟单
             return dt;
 
+        }
+
+        private DataTable BuildEntryDt() {
+            DataTable dt = new DataTable("entry");
+            dt.Columns.Add("");//
+            dt.Columns.Add("partid");//	自增量。去掉<partid />,否则会导致通过xml导入存货结构自由项时，无法追加 后来要支持差异更新，partid不能去掉
+            dt.Columns.Add("invcode");//	存货编码
+            dt.Columns.Add("free1");//	自由项1
+            dt.Columns.Add("free2");//	自由项2
+            dt.Columns.Add("free3");//	自由项3
+            dt.Columns.Add("free4");//	自由项4
+            dt.Columns.Add("free5");//	自由项5
+            dt.Columns.Add("free6");//	自由项6
+            dt.Columns.Add("free7");//	自由项7
+            dt.Columns.Add("free8");//	自由项8
+            dt.Columns.Add("free9");//	自由项9
+            dt.Columns.Add("free10");//	自由项10
+            dt.Columns.Add("safeqty");//	安全库存
+            dt.Columns.Add("minqty");//	最低供应量
+            dt.Columns.Add("mulqty");//	供应倍数
+            dt.Columns.Add("fixqty");//	固定供应量
+            dt.Columns.Add("cbasengineerfigno");//	工程图号
+            dt.Columns.Add("fbasmaxsupply");//	最高供应量
+            dt.Columns.Add("isurenesstype");//	安全库存方法
+            dt.Columns.Add("idatetype");//	期间类型
+            dt.Columns.Add("idatesum	");//期间数
+            dt.Columns.Add("idynamicsurenesstype	");//动态安全库存方法
+            dt.Columns.Add("ibestrowsum");//	覆盖天数
+            dt.Columns.Add("ipercentumsum");//	百分比
+            dt.Columns.Add("bfreestop", typeof(int));//	停用
+            return dt;
+        }
+
+        public override XmlDocument CreateXmlDocument(string operatorStr) {
+            XmlDocument doc = CreateXmlSchema(_name, _dEBusinessItem, operatorStr);
+            var headerDt = GetHeaderTable(_dEBusinessItem);
+            headerDt.WriteXml(_filePath);
+            XmlDocument docTemp = new XmlDocument();
+            docTemp.Load(_filePath);
+            var node = doc.ImportNode(docTemp.DocumentElement, true);
+            string path = string.Format("ufinterface//{0}", _name);
+            for (int j = 0; j < node.ChildNodes.Count; j++) {
+                var childNode = node.ChildNodes[j];
+                doc.SelectSingleNode(path).AppendChild(childNode);
+                j--;
+            }
+            return doc;
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using BOMExportCommon;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -25,8 +24,36 @@ using Thyt.TiPLM.UIL.Product.Common;
 namespace BOMExportClient {
     public class BomExportClient : IAddinClientEntry, IAutoExec {
         public Delegate d_AfterReleased { get; set; }
+        public Delegate d_AfterDeleted { get; set; }
         public static DEBusinessItem _item = null;
         private int _seq = 0;
+
+        /// <summary>
+        /// 获取当前对象
+        /// </summary>
+        /// <param name="iItem"></param>
+        /// <returns></returns>
+        private DEBusinessItem GetDEBusinessItem(IBizItem iItem) {
+            IActionContext context = ActionContext2.GetInstance().GetCurrentContext();
+            DEPSOption option = null;
+            if (context != null && context.NavContext.Option != null) {
+                option = context.NavContext.Option;
+            }
+            if (option == null)
+                option = ClientData.UserGlobalOption;
+            if (iItem == null)
+                return null;
+            DEBusinessItem bItem = iItem as DEBusinessItem;
+
+            if (bItem == null && iItem is DESmartBizItem) {
+                DESmartBizItem sb = iItem as DESmartBizItem;
+                bItem = (DEBusinessItem)PLItem.Agent.GetBizItem(sb.MasterOid, sb.RevOid, sb.IterOid,
+                                                                 option.CurView, ClientData.LogonUser.Oid,
+                                                                 BizItemMode.BizItem);
+            }
+            return bItem;
+        }
+
         private void ExportExecute(IBizItem Iitem) {
             IActionContext context = ActionContext2.GetInstance().GetCurrentContext();
             DEPSOption option = null;
@@ -242,7 +269,13 @@ namespace BOMExportClient {
 
         public void Init() {
             this.d_AfterReleased = new PLMBizItemDelegate(AfterItemReleased);
+            this.d_AfterDeleted = new PLMDelegate2(AfterItemDeleted);
+            BizItemHandlerEvent.Instance.D_AfterDeleted = (PLMDelegate2)Delegate.Combine(BizItemHandlerEvent.Instance.D_AfterDeleted,this.d_AfterDeleted);
             BizItemHandlerEvent.Instance.D_AfterReleased = (PLMBizItemDelegate)Delegate.Combine(BizItemHandlerEvent.Instance.D_AfterReleased, this.d_AfterReleased);
+        }
+
+        private void AfterItemDeleted(object sender, PLMOperationArgs e) {
+
         }
 
         public void UnInit() {
@@ -259,16 +292,63 @@ namespace BOMExportClient {
                 foreach (object obj2 in list) {
                     if (typeof(IBizItem).IsInstanceOfType(obj2)) {
                         IBizItem item = (IBizItem)obj2;
-                        ExportExecute(item);
-                        //DEPSOption option = PSStart.BuildLocalPSOptionByRev(item, ClientData.UserGlobalOption, ClientData.LogonUser.Oid);
-                        //DEExportEvent expEvent = new DEExportEvent(Guid.NewGuid(), item.MasterOid, item.ClassName, item.Revision.Revision, ClientData.LogonUser.Oid, DateTime.Now, "", option);
-                        //FrmBOMExport.ExportPS((DEBusinessItem)item, option);
+                        //ExportExecute(item);
+                        AddOrEditItem(item);
                     }
                 }
             }
         }
+      
         #endregion
+        #region 导出导入
+        private void AddOrEditItem(IBizItem item) {
+            var bItem = GetDEBusinessItem(item);
+            if (bItem == null) {
+                return;
+            }
+            string oprt = item.LastRevision > 1 ? "Edit" : "Add";
+            switch (bItem.ClassName.ToLower()) {
+                default:
+                    break;
+                case "unitgroup":
+                    UnitGroupDal unitGroupDal = new UnitGroupDal(bItem);
+                    var doc = unitGroupDal.CreateXmlDocument(oprt);
+                    ConnectEAI(doc.OuterXml);
+                    return;
+            }
+        }
 
+        /// <summary>
+        /// 导入到ERP
+        /// </summary>
+        /// <param name="xml"></param>
+        private void ConnectEAI(string xml) { 
+            MSXML2.XMLHTTPClass xmlHttp = new MSXML2.XMLHTTPClass();
+            xmlHttp.open("POST", "http://kexp/u8eai/import.asp", false, null, null);//TODO：地址需要改
+            xmlHttp.send(xml);
+            String responseXml = xmlHttp.responseText;
+            //…… //处理返回结果 
+            XmlDocument resultDoc = new XmlDocument();
+            resultDoc.LoadXml(responseXml);
+            var itemNode = resultDoc.SelectSingleNode("ufinterface//item");
+            if (itemNode==null) {
+                PLMEventLog.WriteLog("没有收到ERP回执！", EventLogEntryType.Error);
+                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(xmlHttp); //COM释放
+                return;
+            }
+            var succeed = Convert.ToInt32(itemNode.Attributes["succeed"].Value);//成功标识：0：成功；非0：失败；
+            var dsc =itemNode.Attributes["dsc"].ToString();
+            //var u8key =itemNode.Attributes["u8key"].ToString();
+            //var proc = itemNode.Attributes["proc"].ToString();
+            if (succeed==0) { 
+                PLMEventLog.WriteLog("导入成功!", EventLogEntryType.Information);
+                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(xmlHttp); //COM释放
+                return;
+            }
+            PLMEventLog.WriteLog(dsc, EventLogEntryType.Error);
+            System.Runtime.InteropServices.Marshal.FinalReleaseComObject(xmlHttp); //COM释放
+        }
+        #endregion
         #region 构建BOM结构
 
         /// <summary>

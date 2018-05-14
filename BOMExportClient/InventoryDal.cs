@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using Thyt.TiPLM.DEL.Product;
+using Thyt.TiPLM.PLL.Product2;
 
 namespace BOMExportClient {
     public class InventoryDal : BaseDal {
@@ -41,18 +42,35 @@ namespace BOMExportClient {
             }
             var dt = BuildHeaderDt();
             DataRow row = dt.NewRow();
-            #region 特殊节点
-
-            #endregion
 
             #region 普通节点，默认ERP列名和PLM列名一致
             foreach (DataColumn col in dt.Columns) {
-                row[col] = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
+                switch (col.ColumnName) {
+                    default:
+                        var val = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
+                        row[col] = val == null ? DBNull.Value : val;
+                        break;
+                    case "code":
+                        row[col] = dEBusinessItem.Id;
+                        break;
+                    case "CreatePerson":
+                        row[col] = PrintUtil.GetUserName(dEBusinessItem.Creator);
+                        break;
+                    case "ModifyPerson":
+                        row[col] = PrintUtil.GetUserName(dEBusinessItem.LatestUpdator);
+                        break;
+                    case "ModifyDate":
+                        row[col] = dEBusinessItem.LatestUpdateTime;
+                        break;
+                }
             }
             #endregion
+
             dt.Rows.Add(row);
             return dt;
         }
+
+
 
         /// <summary>
         /// 创建Header节点结构
@@ -339,7 +357,7 @@ namespace BOMExportClient {
             return dt;
         }
 
-        public override XmlDocument CreateXmlDocument(string operatorStr) {
+        protected override XmlDocument BuildXmlDocment(string operatorStr) {
             XmlDocument doc = CreateXmlSchema(_name, _dEBusinessItem, operatorStr);
             var headerDt = GetHeaderTable(_dEBusinessItem);
             headerDt.WriteXml(_filePath);
@@ -347,12 +365,50 @@ namespace BOMExportClient {
             docTemp.Load(_filePath);
             var node = doc.ImportNode(docTemp.DocumentElement, true);
             string path = string.Format("ufinterface//{0}", _name);
-            for (int j = 0; j < node.ChildNodes.Count; j++) {
-                var childNode = node.ChildNodes[j];
-                doc.SelectSingleNode(path).AppendChild(childNode);
-                j--;
-            }
+            doc.SelectSingleNode(path).AppendChild(node.FirstChild);//append head节点
+
+            var entryDt = GetEntryDt(_dEBusinessItem);
+            entryDt.WriteXml(_filePath);
+            XmlDocument entryDoc = new XmlDocument();
+            entryDoc.Load(_filePath);
+            var entryNode = doc.ImportNode(entryDoc.DocumentElement, true);
+
+            var bodyNode = doc.CreateElement("body");
+            bodyNode.AppendChild(entryNode.FirstChild);
+            doc.SelectSingleNode(path).AppendChild(bodyNode);
+            //for (int j = 0; j < node.ChildNodes.Count; j++) {
+            //    var childNode = node.ChildNodes[j];
+            //    doc.SelectSingleNode(path).AppendChild(childNode);
+            //    j--;
+            //}
             return doc;
+        }
+
+        /// <summary>
+        /// 获取entry节点数据
+        /// </summary>
+        /// <param name="dEBusinessItem"></param>
+        /// <returns></returns>
+        private DataTable GetEntryDt(DEBusinessItem dEBusinessItem) {
+            if (dEBusinessItem == null) {
+                return null;
+            }
+            var dt = BuildEntryDt();
+            DataRow row = dt.NewRow();
+
+            #region 普通节点，默认ERP列名和PLM列名一致
+            foreach (DataColumn col in dt.Columns) {
+                if (col.ColumnName == "invcode") {
+                    row[col] = dEBusinessItem.Id;
+                    continue;
+                }
+                var val = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
+                row[col] = val == null ? DBNull.Value : val;
+            }
+            #endregion
+
+            dt.Rows.Add(row);
+            return dt;
         }
     }
 }

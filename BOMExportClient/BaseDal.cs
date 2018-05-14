@@ -7,10 +7,21 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Thyt.TiPLM.CLT.Admin.BPM;
+using Thyt.TiPLM.Common;
+using Thyt.TiPLM.DAL.Admin.NewResponsibility;
+using Thyt.TiPLM.DAL.Common;
+using Thyt.TiPLM.DEL.Admin.NewResponsibility;
 using Thyt.TiPLM.DEL.Product;
+using Thyt.TiPLM.PLL.Admin.DataModel;
+using Thyt.TiPLM.PLL.Admin.NewResponsibility;
+using Thyt.TiPLM.PLL.Product2;
+using Thyt.TiPLM.PLL.Resource;
+using Thyt.TiPLM.UIL.Common;
+using Thyt.TiPLM.UIL.Product.Common.UserControls;
 
 namespace BOMExportClient {
-    public abstract class BaseDal { 
+    public abstract class BaseDal {
         protected DEBusinessItem _dEBusinessItem;
         protected string _name;
         protected string _filePath;
@@ -20,7 +31,7 @@ namespace BOMExportClient {
         /// <param name="item"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        protected string BuildFilePath(DEBusinessItem item,string name) {
+        protected string BuildFilePath(DEBusinessItem item, string name) {
             string fPath = Path.GetFullPath("..\\ExportFiles");
             string newFile = Path.Combine(fPath, item.Id + "_" + name + ".xml");
             return newFile;
@@ -39,34 +50,18 @@ namespace BOMExportClient {
                     return "工艺路线";
                 case "inventory":
                 case "unitgroup":
+                case "unit":
+                case "inventoryclass":
                     return "基础档案";
             }
         }
-
-        //private string GetRootTag(string tableName) {
-        //    if (string.IsNullOrEmpty(tableName)) {
-        //        return "";
-        //    }
-        //    switch (tableName) {
-        //        default:
-        //        case "Bom":
-        //            return "bom";
-        //        case "Operation":
-        //            return "标准工序";
-        //        case "Routing":
-        //            return "工艺路线";
-        //        case "inventory":
-        //            return "inventory";
-
-        //    }
-        //}
 
         /// <summary>
         /// 创建xml框架(ufinterface节点和父节点)
         /// </summary>
         /// <param name="dt"></param>
         /// <returns></returns>
-        protected XmlDocument CreateXmlSchema(string tableName, DEBusinessItem dEBusinessItem,string operatorStr) {
+        protected XmlDocument CreateXmlSchema(string tableName, DEBusinessItem dEBusinessItem, string operatorStr) {
             if (string.IsNullOrEmpty(tableName) || dEBusinessItem == null) {
                 return null;
             }
@@ -91,67 +86,92 @@ namespace BOMExportClient {
             root.SetAttribute("sender", "001");
             var tableNode = doc.CreateElement(tableName);
 
-            //var node = doc.ImportNode(doc.DocumentElement, true);
-            //for (int j = 0; j < node.ChildNodes.Count; j++) {
-            //    var childNode = node.ChildNodes[j];
-            //    tableNode.AppendChild(childNode);
-            //    j--;
-            //}
-
             root.AppendChild(tableNode);
             doc.AppendChild(root);
             return doc;
         }
 
-        //public void ExportToXml(List<DataTable> list, string rootName) {
-        //    if (list == null || list.Count == 0) {
-        //        return;
-        //    }
-        //    try {
-        //        string xlsPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        //        string fPath = Path.GetFullPath("..\\ExportFiles");
-        //        string newFile = Path.Combine(fPath, BomExportClient._item.Id + "_" + rootName + ".xml");
-        //        var doc = CreateXmlDocument(list, newFile, rootName);
-        //        doc.Save(newFile);
-
-        //    } catch (Exception ex) {
-        //        PLMEventLog.WriteExceptionLog(ex);
-        //    }
-        //}
-
         /// <summary>
         /// 创建xml文档
         /// </summary>
         /// <returns></returns>
-        public abstract XmlDocument CreateXmlDocument(string operatorStr);
-            //for (int i = 1; i < list.Count; i++) {
-            //    var dt = list[i];
-            //    dt.WriteXml(newFile);
-            //    XmlDocument newDoc = new XmlDocument();
-            //    newDoc.Load(newFile);
-            //    var node = doc.ImportNode(newDoc.DocumentElement, true);
-            //    string path = string.Format("ufinterface//{0}", rootName);
-            //    for (int j = 0; j < node.ChildNodes.Count; j++) {
-            //        var childNode = node.ChildNodes[j];
-            //        doc.SelectSingleNode(path).AppendChild(childNode);
-            //        j--;
-            //    }
-            //} 
+        public XmlDocument CreateXmlDocument(string operatorStr) {
+            var doc = BuildXmlDocment(operatorStr);
+            doc = DateTimeFormat(doc);
+            if (doc==null) {
+                return null;
+            }
+            doc.Save(_filePath);
+            return doc;
+        }
+        /// <summary>
+        /// 格式化日期类型
+        /// </summary>
+        /// <param name="doc"></param>
+        /// <returns></returns>
+        private XmlDocument DateTimeFormat(XmlDocument doc) {
+            XmlDocument newDoc = new XmlDocument();
+            try {
+                // 建立一个 XmlTextReader 对象来读取 XML 数据。
+                using (XmlTextReader myXmlReader = new XmlTextReader(doc.OuterXml, XmlNodeType.Element, null)) {
+                    // 使用指定的文件与编码方式来建立一个 XmlTextWriter 对象。
+                    using (System.Xml.XmlTextWriter myXmlWriter = new System.Xml.XmlTextWriter(_filePath, Encoding.UTF8)) {
+                        myXmlWriter.Formatting = Formatting.Indented;
+                        myXmlWriter.Indentation = 4;
+                        myXmlWriter.WriteStartDocument();
 
-        ///// <summary>
-        ///// 获取操作字符，如果版本号小于1，则新增，否则修改
-        ///// </summary>
-        ///// <param name="dEBusinessItem"></param>
-        ///// <returns></returns>
-        //protected string GetOperatorStr(DEBusinessItem dEBusinessItem) {
-        //    if (dEBusinessItem == null) {
-        //        return "";
-        //    }
-        //    var vs = dEBusinessItem.LastRevision;
-        //    if (vs <= 1) {
-        //        return "Add";
-        //    }
-        //    return "Edit";
-        //}
+                        string elementName = "";
+
+                        // 解析并显示每一个节点。
+                        while (myXmlReader.Read()) { 
+                            switch (myXmlReader.NodeType) {
+                                case XmlNodeType.Element:
+                                    myXmlWriter.WriteStartElement(myXmlReader.Name);
+                                    myXmlWriter.WriteAttributes(myXmlReader,true);
+                                    elementName = myXmlReader.Name;
+
+                                    break;
+                                case XmlNodeType.Text:
+                                    if (elementName.ToLower().Contains("date")) {
+                                        myXmlWriter.WriteString(XmlConvert.ToDateTime(myXmlReader.Value, XmlDateTimeSerializationMode.Local).ToString("yyyy-MM-dd HH:mm:ss"));
+                                        break;
+                                    }
+                                    myXmlWriter.WriteString(myXmlReader.Value);
+                                    break;
+                                case XmlNodeType.EndElement:
+                                    myXmlWriter.WriteEndElement();
+                                    break; 
+                            }
+                        }
+                    }
+                }
+                newDoc.Load(_filePath);
+                return newDoc;
+            } catch (Exception ex) {
+                PLMEventLog.WriteLog(ex.Message, System.Diagnostics.EventLogEntryType.Error);
+                return null;
+            }
+        }
+
+        protected abstract XmlDocument BuildXmlDocment(string operatorStr);
+
+        /// <summary>
+        /// 获取关联
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="relation"></param>
+        /// <returns></returns>
+        private DERelationBizItemList GetLinks(DEBusinessItem item, string relation) {
+            DERelationBizItemList relationBizItemList = item.Iteration.LinkRelationSet.GetRelationBizItemList(relation);
+            if (relationBizItemList == null) {
+                try {
+                    relationBizItemList = PLItem.Agent.GetLinkRelationItems(item.Iteration.Oid, item.Master.ClassName, relation, ClientData.LogonUser.Oid, ClientData.UserGlobalOption);
+                } catch {
+                    return null;
+                }
+            }
+            return relationBizItemList;
+        }
+
     }
 }

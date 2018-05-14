@@ -270,7 +270,7 @@ namespace BOMExportClient {
         public void Init() {
             this.d_AfterReleased = new PLMBizItemDelegate(AfterItemReleased);
             this.d_AfterDeleted = new PLMDelegate2(AfterItemDeleted);
-            BizItemHandlerEvent.Instance.D_AfterDeleted = (PLMDelegate2)Delegate.Combine(BizItemHandlerEvent.Instance.D_AfterDeleted,this.d_AfterDeleted);
+            BizItemHandlerEvent.Instance.D_AfterDeleted = (PLMDelegate2)Delegate.Combine(BizItemHandlerEvent.Instance.D_AfterDeleted, this.d_AfterDeleted);
             BizItemHandlerEvent.Instance.D_AfterReleased = (PLMBizItemDelegate)Delegate.Combine(BizItemHandlerEvent.Instance.D_AfterReleased, this.d_AfterReleased);
         }
 
@@ -298,7 +298,7 @@ namespace BOMExportClient {
                 }
             }
         }
-      
+
         #endregion
         #region 导出导入
         private void AddOrEditItem(IBizItem item) {
@@ -307,22 +307,39 @@ namespace BOMExportClient {
                 return;
             }
             string oprt = item.LastRevision > 1 ? "Edit" : "Add";
+            XmlDocument doc = new XmlDocument();
             switch (bItem.ClassName.ToLower()) {
                 default:
                     break;
                 case "unitgroup":
                     UnitGroupDal unitGroupDal = new UnitGroupDal(bItem);
-                    var doc = unitGroupDal.CreateXmlDocument(oprt);
-                    ConnectEAI(doc.OuterXml);
-                    return;
+                    doc = unitGroupDal.CreateXmlDocument(oprt);
+                    break;
+                case "unit":
+                    UnitDal unitDal = new UnitDal(bItem);
+                    doc = unitDal.CreateXmlDocument(oprt);
+                    break;
+                case "inventoryclass":
+                    InventoryClassDal ivtryClassDal = new InventoryClassDal(bItem);
+                    doc = ivtryClassDal.CreateXmlDocument(oprt);
+                    break;
+                case "inventory":
+                    InventoryDal ivtryDal = new InventoryDal(bItem);
+                    doc = ivtryDal.CreateXmlDocument(oprt);
+                    break;
             }
+            var succeed =ConnectEAI(doc.OuterXml);
+            ////如果没有导入成功，撤销定版
+            //if (!succeed) {
+            //    BizOperationHelper.Instance.UndoNewRelease(bItem);
+            //}
         }
 
         /// <summary>
         /// 导入到ERP
         /// </summary>
         /// <param name="xml"></param>
-        private void ConnectEAI(string xml) { 
+        private bool ConnectEAI(string xml) {
             MSXML2.XMLHTTPClass xmlHttp = new MSXML2.XMLHTTPClass();
             xmlHttp.open("POST", "http://kexp/u8eai/import.asp", false, null, null);//TODO：地址需要改
             xmlHttp.send(xml);
@@ -331,22 +348,26 @@ namespace BOMExportClient {
             XmlDocument resultDoc = new XmlDocument();
             resultDoc.LoadXml(responseXml);
             var itemNode = resultDoc.SelectSingleNode("ufinterface//item");
-            if (itemNode==null) {
+            var s = ConstCommon.CURRENT_PRODUCTNAME;
+
+            if (itemNode == null) {
                 PLMEventLog.WriteLog("没有收到ERP回执！", EventLogEntryType.Error);
                 System.Runtime.InteropServices.Marshal.FinalReleaseComObject(xmlHttp); //COM释放
-                return;
+                return false;
             }
             var succeed = Convert.ToInt32(itemNode.Attributes["succeed"].Value);//成功标识：0：成功；非0：失败；
-            var dsc =itemNode.Attributes["dsc"].ToString();
+            var dsc = itemNode.Attributes["dsc"].Value.ToString();
             //var u8key =itemNode.Attributes["u8key"].ToString();
             //var proc = itemNode.Attributes["proc"].ToString();
-            if (succeed==0) { 
-                PLMEventLog.WriteLog("导入成功!", EventLogEntryType.Information);
+            if (succeed != 0) {
+                PLMEventLog.WriteLog(dsc, EventLogEntryType.Error);
                 System.Runtime.InteropServices.Marshal.FinalReleaseComObject(xmlHttp); //COM释放
-                return;
+                return false;
+                
             }
-            PLMEventLog.WriteLog(dsc, EventLogEntryType.Error);
+            PLMEventLog.WriteLog("导入成功!", EventLogEntryType.Information);
             System.Runtime.InteropServices.Marshal.FinalReleaseComObject(xmlHttp); //COM释放
+            return true;
         }
         #endregion
         #region 构建BOM结构

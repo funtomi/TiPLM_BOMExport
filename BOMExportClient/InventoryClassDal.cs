@@ -8,10 +8,10 @@ using System.Xml;
 using Thyt.TiPLM.DEL.Product;
 
 namespace BOMExportClient {
-    public class UnitGroupDal : BaseDal {
-        public UnitGroupDal(DEBusinessItem dItem) {
+    public class InventoryClassDal : BaseDal {
+        public InventoryClassDal(DEBusinessItem dItem) {
             _dEBusinessItem = dItem;
-            this._name = "unitgroup";
+            this._name = "inventoryclass";
             _filePath = BuildFilePath(dItem, _name);
         }
 
@@ -41,18 +41,18 @@ namespace BOMExportClient {
         /// <param name="dEBusinessItem"></param>
         /// <returns></returns>
         private DataTable GetDataTable(DEBusinessItem dEBusinessItem) {
-            if (dEBusinessItem==null) {
+            if (dEBusinessItem == null) {
                 return null;
             }
             var dt = BuildElementDt();
             var row = dt.NewRow();
             foreach (DataColumn col in dt.Columns) {
-                if (col.ColumnName=="code") {
+                if (col.ColumnName == "code") {
                     row[col] = dEBusinessItem.Id;
                     continue;
-                } 
+                }
                 var val = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
-                row[col] = val == null?DBNull.Value:val;
+                row[col] = val == null ? DBNull.Value : val;
             }
             dt.Rows.Add(row);
             return dt;
@@ -63,12 +63,13 @@ namespace BOMExportClient {
         /// </summary>
         /// <returns></returns>
         private DataTable BuildElementDt() {
-            DataTable dt = new DataTable(_name);
-            dt.Columns.Add("code");//	计量单位组编码
-            dt.Columns.Add("name");//	计量单位组名称
-            dt.Columns.Add("type",typeof(int));//组类别
-            dt.Columns.Add("cgrprelinvcode");//	对应存货编码
-            dt.Columns.Add("bdefaultgroup", typeof(int));//	是否默认组
+            DataTable dt = new DataTable(_name); 
+            dt.Columns.Add("code");//		存货分类编码
+            dt.Columns.Add("name");//存货分类名称
+            dt.Columns.Add("rank", typeof(int));//存货分类编码级次
+            dt.Columns.Add("end_rank_flag", typeof(int));//		末级标志
+            dt.Columns.Add("econo_sort_code");//		所属经济分类编码
+            dt.Columns.Add("barcode");//		对应条形码中的编码 
             return dt;
         }
     }

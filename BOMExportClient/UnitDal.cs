@@ -8,10 +8,10 @@ using System.Xml;
 using Thyt.TiPLM.DEL.Product;
 
 namespace BOMExportClient {
-    public class UnitGroupDal : BaseDal {
-        public UnitGroupDal(DEBusinessItem dItem) {
+    public class UnitDal : BaseDal {
+        public UnitDal(DEBusinessItem dItem) {
             _dEBusinessItem = dItem;
-            this._name = "unitgroup";
+            this._name = "unit";
             _filePath = BuildFilePath(dItem, _name);
         }
 
@@ -41,18 +41,18 @@ namespace BOMExportClient {
         /// <param name="dEBusinessItem"></param>
         /// <returns></returns>
         private DataTable GetDataTable(DEBusinessItem dEBusinessItem) {
-            if (dEBusinessItem==null) {
+            if (dEBusinessItem == null) {
                 return null;
             }
             var dt = BuildElementDt();
             var row = dt.NewRow();
             foreach (DataColumn col in dt.Columns) {
-                if (col.ColumnName=="code") {
+                if (col.ColumnName == "code") {
                     row[col] = dEBusinessItem.Id;
                     continue;
-                } 
+                }
                 var val = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
-                row[col] = val == null?DBNull.Value:val;
+                row[col] = val == null ? DBNull.Value : val;
             }
             dt.Rows.Add(row);
             return dt;
@@ -64,11 +64,18 @@ namespace BOMExportClient {
         /// <returns></returns>
         private DataTable BuildElementDt() {
             DataTable dt = new DataTable(_name);
-            dt.Columns.Add("code");//	计量单位组编码
-            dt.Columns.Add("name");//	计量单位组名称
-            dt.Columns.Add("type",typeof(int));//组类别
-            dt.Columns.Add("cgrprelinvcode");//	对应存货编码
-            dt.Columns.Add("bdefaultgroup", typeof(int));//	是否默认组
+            dt.Columns.Add("code");//	计量单位编码
+            dt.Columns.Add("name");//	计量单位名称
+            dt.Columns.Add("group_code");//	计量单位组编码
+            dt.Columns.Add("barcode");//	对应条形码中的编码
+            dt.Columns.Add("main_flag",typeof(int));//	主计量单位标志（是否主计量单位）
+            dt.Columns.Add("changerate",typeof(decimal));//	换算率
+            dt.Columns.Add("portion", typeof(decimal));//	合理浮动比例
+            dt.Columns.Add("SerialNum",typeof(int));//	辅计量单位序号
+            dt.Columns.Add("censingular");//	英文名称单数
+            dt.Columns.Add("cenplural");//	英文名称复数
+            dt.Columns.Add("cunitrefinvcode");//	对应存货编码
+
             return dt;
         }
     }

@@ -103,6 +103,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Export\Thyt.TiPLM.UIL.Common.DLL</HintPath>
     </Reference>
+    <Reference Include="Thyt.TiPLM.UIL.Controls, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Export\Thyt.TiPLM.UIL.Controls.DLL</HintPath>
+    </Reference>
     <Reference Include="Thyt.TiPLM.UIL.Product.Common, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Export\Thyt.TiPLM.UIL.Product.Common.DLL</HintPath>
@@ -110,14 +114,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BaseDal.cs" />
+    <Compile Include="BomDal.cs" />
     <Compile Include="BomExportClient.cs" />
-    <Compile Include="ExportExcel.cs" />
-    <Compile Include="ExportXml.cs" />
     <Compile Include="InventoryClassDal.cs" />
     <Compile Include="InventoryDal.cs" />
+    <Compile Include="OperationDal.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RoutingDal.cs" />
     <Compile Include="UnitDal.cs" />
     <Compile Include="UnitGroupDal.cs" />
+    <Compile Include="WorkCenterDal.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

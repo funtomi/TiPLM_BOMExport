@@ -19,6 +19,7 @@ using Thyt.TiPLM.PLL.Common;
 using Thyt.TiPLM.PLL.Environment;
 using Thyt.TiPLM.PLL.Product2;
 using Thyt.TiPLM.UIL.Common;
+using Thyt.TiPLM.UIL.Controls;
 using Thyt.TiPLM.UIL.Product.Common;
 
 namespace BOMExportClient {
@@ -80,12 +81,12 @@ namespace BOMExportClient {
             #region BOM
 
             #endregion
-            var ds = BuildBomDataSet(_item);
-            ExportXml.ExportToXml(ds, "Bom");
-            ds = BuildOperationDataSet(_item);
-            ExportXml.ExportToXml(ds, "Operation");
-            ds = BuildRoutingDataSet(_item);
-            ExportXml.ExportToXml(ds, "Routing");
+            //var ds = BuildBomDataSet(_item);
+            //ExportXml.ExportToXml(ds, "Bom");
+            //ds = BuildOperationDataSet(_item);
+            //ExportXml.ExportToXml(ds, "Operation");
+            //ds = BuildRoutingDataSet(_item);
+            //ExportXml.ExportToXml(ds, "Routing");
         }
         #region 构建工艺路线结构
 
@@ -306,33 +307,56 @@ namespace BOMExportClient {
             if (bItem == null) {
                 return;
             }
-            string oprt = item.LastRevision > 1 ? "Edit" : "Add";
+            //string oprt = item.LastRevision > 1 ? "Edit" : "Add";
+            string oprt ="Add";
             XmlDocument doc = new XmlDocument();
+            bool succeed = true;
             switch (bItem.ClassName.ToLower()) {
                 default:
                     break;
                 case "unitgroup":
                     UnitGroupDal unitGroupDal = new UnitGroupDal(bItem);
                     doc = unitGroupDal.CreateXmlDocument(oprt);
+                    succeed = ConnectEAI(doc.OuterXml);
                     break;
                 case "unit":
                     UnitDal unitDal = new UnitDal(bItem);
                     doc = unitDal.CreateXmlDocument(oprt);
+                    succeed = ConnectEAI(doc.OuterXml);
                     break;
                 case "inventoryclass":
                     InventoryClassDal ivtryClassDal = new InventoryClassDal(bItem);
                     doc = ivtryClassDal.CreateXmlDocument(oprt);
+                    succeed = ConnectEAI(doc.OuterXml);
                     break;
-                case "inventory":
+                case "tipart":
+                case "tigz":
                     InventoryDal ivtryDal = new InventoryDal(bItem);
                     doc = ivtryDal.CreateXmlDocument(oprt);
+                    succeed = ConnectEAI(doc.OuterXml);
+                    break;
+                case "operation":
+                    OperationDal operationDal = new OperationDal(bItem);
+                    doc = operationDal.CreateXmlDocument(oprt);
+                    succeed = ConnectEAI(doc.OuterXml);
+                    break;
+                case "routing":
+                    RoutingDal routingDal = new RoutingDal(bItem);
+                    doc = routingDal.CreateXmlDocument(oprt);
+                    succeed = ConnectEAI(doc.OuterXml);
+                    if (!succeed) {
+                        break;
+                    }
+                    BomDal bomDal = new BomDal(bItem);
+                    doc = bomDal.CreateXmlDocument(oprt);
+                    succeed = ConnectEAI(doc.OuterXml);
                     break;
             }
-            var succeed =ConnectEAI(doc.OuterXml);
             ////如果没有导入成功，撤销定版
             //if (!succeed) {
             //    BizOperationHelper.Instance.UndoNewRelease(bItem);
             //}
+
         }
 
         /// <summary>
@@ -351,6 +375,8 @@ namespace BOMExportClient {
             var s = ConstCommon.CURRENT_PRODUCTNAME;
 
             if (itemNode == null) {
+                MessageBoxPLM.Show("没有收到ERP回执！");
+
                 PLMEventLog.WriteLog("没有收到ERP回执！", EventLogEntryType.Error);
                 System.Runtime.InteropServices.Marshal.FinalReleaseComObject(xmlHttp); //COM释放
                 return false;
@@ -360,11 +386,14 @@ namespace BOMExportClient {
             //var u8key =itemNode.Attributes["u8key"].ToString();
             //var proc = itemNode.Attributes["proc"].ToString();
             if (succeed != 0) {
+                MessageBoxPLM.Show(string.Format("ERP导入失败，原因：{0}",dsc));
+
                 PLMEventLog.WriteLog(dsc, EventLogEntryType.Error);
                 System.Runtime.InteropServices.Marshal.FinalReleaseComObject(xmlHttp); //COM释放
                 return false;
-                
+
             }
+            MessageBoxPLM.Show("ERP导入成功!");
             PLMEventLog.WriteLog("导入成功!", EventLogEntryType.Information);
             System.Runtime.InteropServices.Marshal.FinalReleaseComObject(xmlHttp); //COM释放
             return true;

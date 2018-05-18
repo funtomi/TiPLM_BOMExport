@@ -45,9 +45,9 @@ namespace BOMExportClient {
 
             #region 普通节点，默认ERP列名和PLM列名一致
             foreach (DataColumn col in dt.Columns) {
+                var val = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
                 switch (col.ColumnName) {
                     default:
-                        var val = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
                         row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "code":
@@ -62,6 +62,20 @@ namespace BOMExportClient {
                     case "ModifyDate":
                         row[col] = dEBusinessItem.LatestUpdateTime;
                         break;
+                    case "unitgroup_code":
+                        row[col] = val == null ? "01" : val;
+                        break;
+                    case "cPlanMethod":
+                        row[col] = val == null ? "L" : val;
+                        break;
+                    case "cSRPolicy":
+                        row[col] = val == null ? "PE" : val;
+                        break;
+                    case "iSupplyType":
+                        row[col] = val == null ? 0 : val;
+                        break;
+                        
+
                 }
             }
             #endregion
@@ -114,7 +128,9 @@ namespace BOMExportClient {
             dt.Columns.Add("entrust_flag", typeof(int));//是否受托代销
             dt.Columns.Add("backlog_flag", typeof(int));//是否呆滞积压
             dt.Columns.Add("start_date", typeof(DateTime));//	启用日期
+            _dateNames.Add("start_date");
             dt.Columns.Add("end_date", typeof(DateTime));//停用日期
+            _dateNames.Add("end_date");
             dt.Columns.Add("free_item1", typeof(int));//	自由项1(存货是否有自由项1)
             dt.Columns.Add("free_item2", typeof(int));//	自由项2(存货是否有自由项2)
             dt.Columns.Add("self_define1");//自定义项1
@@ -130,6 +146,7 @@ namespace BOMExportClient {
             dt.Columns.Add("CreatePerson");//	建档人
             dt.Columns.Add("ModifyPerson");//变更人
             dt.Columns.Add("ModifyDate", typeof(DateTime));//	变更日期
+            _dateNames.Add("ModifyDate");
             dt.Columns.Add("subscribe_point", typeof(decimal));//	订货点
             dt.Columns.Add("avgquantity", typeof(decimal));//	平均耗用量
             dt.Columns.Add("pricetype");//	计价方式
@@ -156,7 +173,9 @@ namespace BOMExportClient {
             dt.Columns.Add("self_define13", typeof(decimal));//	自定义项13
             dt.Columns.Add("self_define14", typeof(decimal));//	自定义项14
             dt.Columns.Add("self_define15", typeof(DateTime));//	自定义项15
+            _dateNames.Add("self_define15");
             dt.Columns.Add("self_define16", typeof(DateTime));//	自定义项16
+            _dateNames.Add("self_define16");
             dt.Columns.Add("free_item3", typeof(int));//	自由项3
             dt.Columns.Add("free_item4", typeof(int));//	自由项4
             dt.Columns.Add("free_item5", typeof(int));//	自由项5
@@ -184,6 +203,7 @@ namespace BOMExportClient {
             dt.Columns.Add("frequency", typeof(int));//	盘点周期
             dt.Columns.Add("check_day", typeof(int));//	盘点日
             dt.Columns.Add("lastcheck_date", typeof(DateTime));//	上次盘点日期
+            _dateNames.Add("lastcheck_date");
             dt.Columns.Add("wastage", typeof(decimal));//	合理损耗率
             dt.Columns.Add("solitude", typeof(int));//	是否单独存放
             dt.Columns.Add("enterprise");//	生产企业
@@ -289,6 +309,7 @@ namespace BOMExportClient {
             dt.Columns.Add("cinvplancode");//	计划品
             dt.Columns.Add("fconvertrate", typeof(decimal));//	转换因子
             dt.Columns.Add("dreplacedate", typeof(DateTime));//	替换日期
+            _dateNames.Add("dreplacedate");
             dt.Columns.Add("binvmodel", typeof(int));//	模型
             dt.Columns.Add("iimptaxrate", typeof(decimal));//	进项税率
             dt.Columns.Add("iexptaxrate", typeof(decimal));//	出口税率

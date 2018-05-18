@@ -25,6 +25,7 @@ namespace BOMExportClient {
         protected DEBusinessItem _dEBusinessItem;
         protected string _name;
         protected string _filePath;
+        protected List<string> _dateNames=new List<string>();
         /// <summary>
         /// 构建保存路径
         /// </summary>
@@ -43,11 +44,10 @@ namespace BOMExportClient {
             switch (tableName) {
                 default:
                 case "Bom":
-                    return "生产制造";
+                case "WorkCenters":
                 case "Operation":
-                    return "标准工序";
                 case "Routing":
-                    return "工艺路线";
+                    return "生产制造";
                 case "inventory":
                 case "unitgroup":
                 case "unit":
@@ -97,7 +97,7 @@ namespace BOMExportClient {
         /// <returns></returns>
         public XmlDocument CreateXmlDocument(string operatorStr) {
             var doc = BuildXmlDocment(operatorStr);
-            doc = DateTimeFormat(doc);
+            doc = DateTimeFormat(doc, _dateNames);
             if (doc==null) {
                 return null;
             }
@@ -109,7 +109,10 @@ namespace BOMExportClient {
         /// </summary>
         /// <param name="doc"></param>
         /// <returns></returns>
-        private XmlDocument DateTimeFormat(XmlDocument doc) {
+        private XmlDocument DateTimeFormat(XmlDocument doc,List<string> eles) {
+            if (eles==null||eles.Count==0) {
+                return doc;
+            }
             XmlDocument newDoc = new XmlDocument();
             try {
                 // 建立一个 XmlTextReader 对象来读取 XML 数据。
@@ -132,7 +135,7 @@ namespace BOMExportClient {
 
                                     break;
                                 case XmlNodeType.Text:
-                                    if (elementName.ToLower().Contains("date")) {
+                                    if (eles.Contains(elementName)) {
                                         myXmlWriter.WriteString(XmlConvert.ToDateTime(myXmlReader.Value, XmlDateTimeSerializationMode.Local).ToString("yyyy-MM-dd HH:mm:ss"));
                                         break;
                                     }
@@ -161,7 +164,7 @@ namespace BOMExportClient {
         /// <param name="item"></param>
         /// <param name="relation"></param>
         /// <returns></returns>
-        private DERelationBizItemList GetLinks(DEBusinessItem item, string relation) {
+        protected DERelationBizItemList GetLinks(DEBusinessItem item, string relation) {
             DERelationBizItemList relationBizItemList = item.Iteration.LinkRelationSet.GetRelationBizItemList(relation);
             if (relationBizItemList == null) {
                 try {

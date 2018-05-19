@@ -93,6 +93,9 @@ namespace BOMExportClient {
             int seqNo = 0;
             for (int i = 0; i < linkItems.BizItems.Count; i++) {
                 var item = linkItems.BizItems[i] as DEBusinessItem;//工序对象
+                if (item == null) {
+                    continue;
+                }
                 var relation = linkItems.RelationList[i] as DERelation2;//工艺路线和工序关系
                 var links = GetLinks(item, "GXTOPART");//工序和零件
                 if (links == null || links.Count == 0) {
@@ -114,37 +117,10 @@ namespace BOMExportClient {
                     //var cpntLotDt = GetComponentLocDt(baseItem, relation);
                     //doc = AddComponentNode(doc, cpntLotDt);
                 }
-                if (item == null) {
-                    continue;
-                }
-                if (itemIds.Contains(item.Id)) {
-                    continue;
-                }
-                itemIds.Add(item.Id);
-
-
             }
             return doc;
         }
 
-        /// <summary>
-        /// 添加子节点
-        /// </summary>
-        /// <param name="doc"></param>
-        /// <param name="componentDt"></param>
-        /// <returns></returns>
-        private XmlDocument AddComponentNode(XmlDocument doc, DataTable componentDt) {
-            if (componentDt == null || componentDt.Rows.Count == 0) {
-                return doc;
-            }
-            componentDt.WriteXml(_filePath);
-            XmlDocument docTemp = new XmlDocument();
-            docTemp.Load(_filePath);
-            XmlNode node = doc.ImportNode(docTemp.DocumentElement, true);
-            string path = string.Format("ufinterface//{0}", _name);
-            doc.SelectSingleNode(path).AppendChild(node.FirstChild);
-            return doc;
-        }
 
         /// <summary>
         /// 获取数据

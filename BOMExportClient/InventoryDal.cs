@@ -74,8 +74,6 @@ namespace BOMExportClient {
                     case "iSupplyType":
                         row[col] = val == null ? 0 : val;
                         break;
-                        
-
                 }
             }
             #endregion

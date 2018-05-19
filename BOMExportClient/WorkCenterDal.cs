@@ -11,7 +11,7 @@ namespace BOMExportClient {
     public class WorkCenterDal : BaseDal {
         public WorkCenterDal(DEBusinessItem dItem) {
             _dEBusinessItem = dItem;
-            this._name = "unitgroup";
+            this._name = "WorkCenters";
             _filePath = BuildFilePath(dItem, _name);
         }
 
@@ -23,15 +23,7 @@ namespace BOMExportClient {
             docTemp.Load(_filePath);
             var node = doc.ImportNode(docTemp.DocumentElement, true);
             string path = string.Format("ufinterface//{0}", _name);
-            var cNode = node.SelectNodes(_name);
-            if (cNode == null || cNode.Count == 0) {
-                return null;
-            }
-            for (int j = 0; j < cNode[0].ChildNodes.Count; j++) {
-                var childNode = cNode[0].ChildNodes[j];
-                doc.SelectSingleNode(path).AppendChild(childNode);
-                j--;
-            }
+            doc.SelectSingleNode(path).AppendChild(node.FirstChild);
             return doc;
         }
 
@@ -47,20 +39,24 @@ namespace BOMExportClient {
             var dt = BuildElementDt();
             var row = dt.NewRow();
             foreach (DataColumn col in dt.Columns) {
-                if (col.ColumnName == "WcCode") {
-                    row[col] = dEBusinessItem.Id;
-                    continue;
-                }
-                if (col.ColumnName == "Description") {
-                    row[col] = dEBusinessItem.Name;
-                    continue;
-                }
-                if (col.ColumnName == "CalendarCode") {
-                    row[col] = "SYSTEM";
-                    continue;
-                }
                 var val = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
-                row[col] = val == null ? DBNull.Value : val;
+                switch (col.ColumnName) {
+                    default:
+                        row[col] = val == null ? DBNull.Value : val;
+                        break;
+                    case "WcCode":
+                        row[col] = dEBusinessItem.Id;
+                        break;
+                    case "Description":
+                        row[col] = dEBusinessItem.Name;
+                        break;
+                    case "CalendarCode":
+                        row[col] = "SYSTEM";
+                        break;
+                    case "ProductLineFlag":
+                        row[col] = val == null ? true : val;
+                        break;
+                }
             }
             dt.Rows.Add(row);
             return dt;
@@ -71,13 +67,13 @@ namespace BOMExportClient {
         /// </summary>
         /// <returns></returns>
         private DataTable BuildElementDt() {
-            DataTable dt = new DataTable(_name);
-            //dt.Columns.Add("WcId	");//工作中心Id（自动编号）
+            DataTable dt = new DataTable("WorkCenter");
+            dt.Columns.Add("WcId",typeof(int));//工作中心Id（自动编号）  
             dt.Columns.Add("WcCode");//	工作中心代号  
             dt.Columns.Add("Description");//	名称  
             dt.Columns.Add("CalendarCode");//	行事历Id  （工作日历代号）
-            dt.Columns.Add("ProductLineFlag");//	是否生产线  
-            dt.Columns.Add("DeptCode	");//隶属部门
+            dt.Columns.Add("ProductLineFlag", typeof(bool));//	是否生产线  
+            dt.Columns.Add("DeptCode");//隶属部门
             return dt;
         }
     }

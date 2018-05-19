@@ -336,6 +336,7 @@ namespace BOMExportClient {
                     succeed = ConnectEAI(doc.OuterXml);
                     break;
                 case "operation":
+                case "gx":
                     OperationDal operationDal = new OperationDal(bItem);
                     doc = operationDal.CreateXmlDocument(oprt);
                     succeed = ConnectEAI(doc.OuterXml);
@@ -349,6 +350,16 @@ namespace BOMExportClient {
                     }
                     BomDal bomDal = new BomDal(bItem);
                     doc = bomDal.CreateXmlDocument(oprt);
+                    succeed = ConnectEAI(doc.OuterXml);
+                    break;
+                case "resourcedoc":
+                    ResourceDal resourceDal = new ResourceDal(bItem);
+                    doc = resourceDal.CreateXmlDocument(oprt);
+                    succeed = ConnectEAI(doc.OuterXml);
+                    break;
+                case "workcenters":
+                    WorkCenterDal workCenterDal = new WorkCenterDal(bItem);
+                    doc = workCenterDal.CreateXmlDocument(oprt);
                     succeed = ConnectEAI(doc.OuterXml);
                     break;
             }
@@ -365,7 +376,7 @@ namespace BOMExportClient {
         /// <param name="xml"></param>
         private bool ConnectEAI(string xml) {
             MSXML2.XMLHTTPClass xmlHttp = new MSXML2.XMLHTTPClass();
-            xmlHttp.open("POST", "http://kexp/u8eai/import.asp", false, null, null);//TODO：地址需要改
+            xmlHttp.open("POST", "http://localhost/u8eai/import.asp", false, null, null);//TODO：地址需要改
             xmlHttp.send(xml);
             String responseXml = xmlHttp.responseText;
             //…… //处理返回结果 

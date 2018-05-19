@@ -120,6 +120,7 @@
     <Compile Include="InventoryDal.cs" />
     <Compile Include="OperationDal.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResourceDal.cs" />
     <Compile Include="RoutingDal.cs" />
     <Compile Include="UnitDal.cs" />
     <Compile Include="UnitGroupDal.cs" />

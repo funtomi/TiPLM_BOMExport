@@ -176,5 +176,23 @@ namespace BOMExportClient {
             return relationBizItemList;
         }
 
+        /// <summary>
+        /// 添加子节点
+        /// </summary>
+        /// <param name="doc"></param>
+        /// <param name="componentDt"></param>
+        /// <returns></returns>
+        protected XmlDocument AddComponentNode(XmlDocument doc, DataTable componentDt) {
+            if (componentDt == null || componentDt.Rows.Count == 0) {
+                return doc;
+            }
+            componentDt.WriteXml(_filePath);
+            XmlDocument docTemp = new XmlDocument();
+            docTemp.Load(_filePath);
+            XmlNode node = doc.ImportNode(docTemp.DocumentElement, true);
+            string path = string.Format("ufinterface//{0}", _name);
+            doc.SelectSingleNode(path).AppendChild(node.FirstChild);
+            return doc;
+        }
     }
 }

@@ -15,6 +15,8 @@ namespace BOMExportClient {
             _filePath = BuildFilePath(dItem, _name);
         }
 
+        private bool _hasRss = false;
+
         protected override XmlDocument BuildXmlDocment(string operatorStr) {
             XmlDocument doc = CreateXmlSchema(_name, _dEBusinessItem, operatorStr);
             //OperationDetail
@@ -26,12 +28,15 @@ namespace BOMExportClient {
             string path = string.Format("ufinterface//{0}", _name);
             doc.SelectSingleNode(path).AppendChild(node.FirstChild);
             //OperationRes
-            dt = GetOperationResDt(_dEBusinessItem);
-            dt.WriteXml(_filePath);
-            docTemp = new XmlDocument();
-            docTemp.Load(_filePath);
-            node = doc.ImportNode(docTemp.DocumentElement, true);
-            doc.SelectSingleNode(path).AppendChild(node.FirstChild);
+            if (_hasRss) {
+                doc = AddChildXmlDocument(doc, _dEBusinessItem);
+            }
+            //dt = GetOperationResDt(_dEBusinessItem);
+            //dt.WriteXml(_filePath);
+            //docTemp = new XmlDocument();
+            //docTemp.Load(_filePath);
+            //node = doc.ImportNode(docTemp.DocumentElement, true);
+            //doc.SelectSingleNode(path).AppendChild(node.FirstChild);
             //OperationInsp
             dt = GetOperationInspDt(_dEBusinessItem);
             dt.WriteXml(_filePath);
@@ -39,6 +44,27 @@ namespace BOMExportClient {
             docTemp.Load(_filePath);
             node = doc.ImportNode(docTemp.DocumentElement, true);
             doc.SelectSingleNode(path).AppendChild(node.FirstChild);
+            return doc;
+        }
+
+        private XmlDocument AddChildXmlDocument(XmlDocument doc, DEBusinessItem baseItem) {
+            if (doc == null || baseItem == null) {
+                return doc;
+            }
+            var links = GetLinks(baseItem, "GXTORESOURCEDOC");//工序和资源
+            if (links == null || links.Count == 0) {
+                return doc;
+            }
+            for (int i = 0; i < links.BizItems.Count; i++) {
+
+                var item = links.BizItems[i] as DEBusinessItem;//资源对象
+                if (item == null) {
+                    continue;
+                }
+                var relation = links.RelationList[i] as DERelation2;//工序和资源关系 
+                var componentDt = GetOperationResDt(baseItem, item, relation);
+                doc = AddComponentNode(doc, componentDt);
+            }
             return doc;
         }
 
@@ -60,20 +86,29 @@ namespace BOMExportClient {
                     default:
                         row[col] = val == null ? DBNull.Value : val;
                         break;
-                    case "OperationId":
                     case "OpCode":
                         row[col] = dEBusinessItem.Id;
                         break;
+                    case "Description":
+                        row[col] = dEBusinessItem.Name;
+                        break;
+                    case "WcCode":
+                        row[col] = val == null ? DBNull.Value : val;
+                        _hasRss = val != null;
+                        break;
+                    
+                    case "DeliverDays":
+                        row[col] = val == null ? 0 : val;
+                        break;
                     case "RltOptionFlag":
                     case "SubFlag":
-                    case "DeliverDays":
                     case "IsBF":
                     case "IsPlanSub":
-                        row[col] = val == null ? 0 : val;
+                        row[col] = val == null ? false : val;
                         break;
                     case "IsFee":
                     case "IsReport":
-                        row[col] = val == null ? 1 : val;
+                        row[col] = val == null ? true : val;
                         break;
                 }
             }
@@ -91,8 +126,14 @@ namespace BOMExportClient {
             dt.Columns.Add("OpCode");//	标准工序代号  	nvarchar
             dt.Columns.Add("Description");//	说明  	nvarchar
             dt.Columns.Add("WcCode", typeof(int));//	工作中心代号  	int
-            dt.Columns.Add("RltOptionFlag", typeof(int));//	是/否与选项相关	bit
-            dt.Columns.Add("SubFlag", typeof(int));//	是/否委外工序(1/0)  	bit
+            dt.Columns.Add("RltOptionFlag", typeof(bool));//	是/否与选项相关	bit
+            dt.Columns.Add("SubFlag", typeof(bool));//	是/否委外工序(1/0)  	bit
+            dt.Columns.Add("DeliverDays", typeof(int));//	交货天数 	int	4 
+            dt.Columns.Add("IsBF", typeof(bool));//	倒冲工序(0否/1是) 	bit	1 
+            dt.Columns.Add("IsFee", typeof(bool));//	计费点(0否/1是) 	bit	1 
+            dt.Columns.Add("IsPlanSub", typeof(bool));//	计划委外工序(0否/1是) 	bit	1 
+            dt.Columns.Add("IsReport", typeof(bool));//	报告点 (0否/1是) 	bit	1 
+
             dt.Columns.Add("SVendorCode");//	委外商代号  	nvarchar
             dt.Columns.Add("Remark");//	备注  	nvarchar
             dt.Columns.Add("OperationInspId", typeof(int));//	标准工序检验资料Id 	int
@@ -122,7 +163,7 @@ namespace BOMExportClient {
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        private DataTable GetOperationResDt(DEBusinessItem item) {
+        private DataTable GetOperationResDt(DEBusinessItem baseItem, DEBusinessItem item, DERelation2 relation) {
             if (item == null) {
                 return null;
             }
@@ -131,16 +172,20 @@ namespace BOMExportClient {
             var row = dt.NewRow();
             foreach (DataColumn col in dt.Columns) {
                 var val = item.GetAttrValue(item.ClassName, col.ColumnName.ToUpper());
-
+                var rltVal = relation.GetAttrValue(col.ColumnName.ToUpper());
                 switch (col.ColumnName) {
                     default:
+                        row[col] = rltVal == null ? DBNull.Value : rltVal;
+                        break;
+                    case "OperationResId":
+                        row[col] = rltVal == null ? DBNull.Value : rltVal;
+                        break;
+                    case "OperationId":
+                        val = baseItem.GetAttrValue(baseItem.ClassName, col.ColumnName.ToUpper());
                         row[col] = val == null ? DBNull.Value : val;
                         break;
-                    case "SortSeq":
-                        row[col] = val == null ? 10 : val;
-                        break;
                     case "ResCode":
-                        row[col] = val == null ? "R10" : val;
+                        row[col] = item.Id;
                         break;
                     case "BaseType":
                         row[col] = val == null ? 1 : val;

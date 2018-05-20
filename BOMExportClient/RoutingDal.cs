@@ -35,12 +35,12 @@ namespace BOMExportClient {
 
             //RoutingDetail/RoutingInsp/RoutingRes
             doc = GetChildDt(_dEBusinessItem, doc);
-           
+
             return doc;
         }
 
         private XmlDocument GetChildDt(DEBusinessItem baseItem, XmlDocument doc) {
-            if (baseItem==null||doc==null) {
+            if (baseItem == null || doc == null) {
                 return doc;
             }
             var linkItems = GetLinks(baseItem, "ROUTINGTOGX");//todo：修改关系名(工艺路线和工序)
@@ -58,7 +58,7 @@ namespace BOMExportClient {
                     continue;
                 }
                 //RoutingDetail
-                dt = GetRoutingDetailDt(baseItem,item,relation);
+                dt = GetRoutingDetailDt(baseItem, item, relation);
                 dt.WriteXml(_filePath);
                 docTemp = new XmlDocument();
                 docTemp.Load(_filePath);
@@ -77,7 +77,7 @@ namespace BOMExportClient {
                 //doc.SelectSingleNode(path).AppendChild(doc.ImportNode(docTemp.DocumentElement, false).FirstChild);
             }
             return doc;
-           
+
         }
 
         /// <summary>
@@ -97,9 +97,6 @@ namespace BOMExportClient {
                 switch (col.ColumnName) {
                     default:
                         row[col] = val == null ? DBNull.Value : val;
-                        break;
-                    case "PRoutingId":
-                        row[col] = dEBusinessItem.Id;
                         break;
                     case "RountingType":
                         row[col] = val == null ? 1 : val;
@@ -127,7 +124,7 @@ namespace BOMExportClient {
             DataTable dt = new DataTable("Version");
             dt.Columns.Add("PRoutingId", typeof(int));// 	料品工艺路线ID 	int	4 
             dt.Columns.Add("RountingType", typeof(int));// 	类型	tinyint	1 
-            dt.Columns.Add("Version",typeof(int));//  	// 	版本号"int	4 
+            dt.Columns.Add("Version", typeof(int));//  	// 	版本号"int	4 
             dt.Columns.Add("VersionDesc");// 	版本说明  	nvarchar	60 
             dt.Columns.Add("VersionEffDate", typeof(DateTime));// 	版本生效日期  	datetime	8 
             _dateNames.Add("VersionEffDate");
@@ -190,9 +187,6 @@ namespace BOMExportClient {
                     default:
                         row[col] = val == null ? DBNull.Value : val;
                         break;
-                    case "PRoutingId":
-                        row[col] = dEBusinessItem.Id;
-                        break;
                 }
             }
             dt.Rows.Add(row);
@@ -208,9 +202,9 @@ namespace BOMExportClient {
             dt.Columns.Add("PRoutingId", typeof(int));// 	料品工艺路线资料ID 	int	4
             dt.Columns.Add("PRoutingDId", typeof(int));// 	料品工艺路线资料ID 	int	
             dt.Columns.Add("OpSeq");// 	工序序号  	nchar	4 
-            dt.Columns.Add("OperationCode", typeof(int));// 	标准工序Id  	int	4 
+            dt.Columns.Add("OperationCode");// 	标准工序Id  	int	4 
             dt.Columns.Add("Description");// 	标准工序说明  	nvarchar	60 
-            dt.Columns.Add("WcCode", typeof(int));// 	工作中心代号  	int	4 
+            dt.Columns.Add("WcCode");// 	工作中心代号  	int	4 
             dt.Columns.Add("EffBegDate");// 	生效日期  	datetime	8 
             dt.Columns.Add("EffEndDate");// 	失效日期  	datetime	8 
             dt.Columns.Add("SubFlag", typeof(bool));// 	是/否委外工序(1/0)  	bit	1 
@@ -250,7 +244,7 @@ namespace BOMExportClient {
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        private DataTable GetRoutingDetailDt(DEBusinessItem baseItem,DEBusinessItem item, DERelation2 relation) {
+        private DataTable GetRoutingDetailDt(DEBusinessItem baseItem, DEBusinessItem item, DERelation2 relation) {
             if (item == null) {
                 return null;
             }
@@ -264,12 +258,20 @@ namespace BOMExportClient {
                         row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "PRoutingId":
-                        row[col] = baseItem.Id;
+                        val = baseItem.GetAttrValue(baseItem.ClassName, col.ColumnName.ToUpper());
+                        row[col] = val == null ? DBNull.Value : val;
+                        break;
+                    case "OperationCode":
+                         row[col] = item.Id;
                         break;
                     case "PRoutingDId":
-                    case "OperationCode":
+                        val = item.GetAttrValue(item.ClassName, "OPERATIONID");
+                        row[col] = val == null ? DBNull.Value : val;
+                        
+                        break;
                     case "PRoutinginspId":
-                        row[col] = item.Id;
+                        val = item.GetAttrValue(item.ClassName, "OPERATIONINSPID");
+                        row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "Description":
                         row[col] = item.Name;
@@ -341,7 +343,8 @@ namespace BOMExportClient {
                         row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "PRoutinginspId":
-                        row[col] = item.Id;
+                        val = item.GetAttrValue(item.ClassName, "OPERATIONINSPID");
+                        row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "OpTransType"://工序转移默认“手动”
                     case "QtMethod":

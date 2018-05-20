@@ -110,7 +110,7 @@ namespace BOMExportClient {
                     itemIds.Add(itemBom.Id);//过滤重复物料
                     var componentDt = GetComponentDt(bomItem, relation, itemBom, rlt, ref seqNo);
                     doc = AddComponentNode(doc, componentDt);
-                    var cmpntOptDt = GetComponentOptDt(itemBom, rlt);
+                    var cmpntOptDt = GetComponentOptDt(itemBom, rlt, seqNo);
                     doc = AddComponentNode(doc, cmpntOptDt);
                     //var cpntSubDt = GetComponentSubDt(baseItem, relation);
                     //doc = AddComponentNode(doc, cpntSubDt);
@@ -139,9 +139,6 @@ namespace BOMExportClient {
                 switch (col.ColumnName) {
                     default:
                         row[col] = val == null ? DBNull.Value : val;
-                        break;
-                    case "BomId":
-                        row[col] = item.Id;
                         break;
                     case "Version":
                         row[col] = item.LastRevision;
@@ -212,7 +209,6 @@ namespace BOMExportClient {
                     default:
                         row[col] = val == null ? DBNull.Value : val;
                         break;
-                    case "BomId":
                     case "InvCode":
                         row[col] = item.Id;
                         break;
@@ -267,14 +263,15 @@ namespace BOMExportClient {
                         row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "BomId":
-                        row[col] = baseItem.Id;
+                        val = baseItem.GetAttrValue(baseItem.ClassName, col.ColumnName.ToUpper());
+                        row[col] = val == null ? DBNull.Value : val;
                         break;
-                    case "OpComponentId":
                     case "InvCode":
-                    case "OptionsId":
                         row[col] = bomItem.Id;
                         break;
                     case "SortSeq":
+                    case "OptionsId":
+                    case "OpComponentId":
                         row[col] = (seqNo * 10);
                         break;
                     case "OpSeq":
@@ -369,7 +366,7 @@ namespace BOMExportClient {
         /// </summary>
         /// <param name="bomItem"></param>
         /// <returns></returns>
-        private DataTable GetComponentOptDt(DEBusinessItem bomItem, DERelation2 relation) {
+        private DataTable GetComponentOptDt(DEBusinessItem bomItem, DERelation2 relation, int seq) {
             if (bomItem == null) {
                 return null;
             }
@@ -383,7 +380,7 @@ namespace BOMExportClient {
                         row[col] = rltVal == null ? DBNull.Value : rltVal;
                         break;
                     case "OptionsId":
-                        row[col] = bomItem.Id;
+                        row[col] = seq * 10;
                         break;
                     case "Offset":
                         row[col] = rltVal == null ? 0 : rltVal;

@@ -308,60 +308,133 @@ namespace BOMExportClient {
                 return;
             }
             //string oprt = item.LastRevision > 1 ? "Edit" : "Add";
-            string oprt ="Add";
+            string oprt = "Add";
             XmlDocument doc = new XmlDocument();
             bool succeed = true;
+            string hasStr = "已经存在，不可重复";
+            string errText = "";
             switch (bItem.ClassName.ToLower()) {
                 default:
                     break;
                 case "unitgroup":
                     UnitGroupDal unitGroupDal = new UnitGroupDal(bItem);
                     doc = unitGroupDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml);
+                    succeed = ConnectEAI(doc.OuterXml,out errText);
+                    if (!succeed && errText.Contains(hasStr)) {
+                        oprt = "Edit";
+                        doc = unitGroupDal.CreateXmlDocument(oprt);
+                        succeed = ConnectEAI(doc.OuterXml, out errText);
+                        if (!succeed) {
+                            MessageBoxPLM.Show(errText);
+                        }
+                    }
                     break;
                 case "unit":
                     UnitDal unitDal = new UnitDal(bItem);
                     doc = unitDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml);
+                    succeed = ConnectEAI(doc.OuterXml, out errText);
+                    if (!succeed && errText.Contains(hasStr)) {
+                        oprt = "Edit";
+                        doc = unitDal.CreateXmlDocument(oprt);
+                        succeed = ConnectEAI(doc.OuterXml, out errText);
+                        if (!succeed) {
+                            MessageBoxPLM.Show(errText);
+                        }
+                    }
                     break;
                 case "inventoryclass":
                     InventoryClassDal ivtryClassDal = new InventoryClassDal(bItem);
                     doc = ivtryClassDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml);
+                    succeed = ConnectEAI(doc.OuterXml, out errText);
+                    if (!succeed && errText.Contains(hasStr)) {
+                        oprt = "Edit";
+                        doc = ivtryClassDal.CreateXmlDocument(oprt);
+                        succeed = ConnectEAI(doc.OuterXml, out errText);
+                        if (!succeed) {
+                            MessageBoxPLM.Show(errText);
+                        }
+                    }
                     break;
                 case "tipart":
                 case "tigz":
                     InventoryDal ivtryDal = new InventoryDal(bItem);
                     doc = ivtryDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml);
+                    succeed = ConnectEAI(doc.OuterXml, out errText);
+                    if (!succeed && errText.Contains(hasStr)) {
+                        oprt = "Edit";
+                        doc = ivtryDal.CreateXmlDocument(oprt);
+                        succeed = ConnectEAI(doc.OuterXml, out errText);
+                        if (!succeed) {
+                            MessageBoxPLM.Show(errText);
+                        }
+                    }
                     break;
                 case "operation":
                 case "gx":
                     OperationDal operationDal = new OperationDal(bItem);
                     doc = operationDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml);
+                    succeed = ConnectEAI(doc.OuterXml, out errText);
+                    if (!succeed && errText.Contains(hasStr)) {
+                        oprt = "Edit";
+                        doc = operationDal.CreateXmlDocument(oprt);
+                        succeed = ConnectEAI(doc.OuterXml, out errText);
+                    }
+                    if (!succeed) {
+                        MessageBoxPLM.Show(errText);
+                    }
                     break;
                 case "routing":
                     RoutingDal routingDal = new RoutingDal(bItem);
                     doc = routingDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml);
+                    succeed = ConnectEAI(doc.OuterXml, out errText);
+                    if (!succeed && errText.Contains(hasStr)) {
+                        oprt = "Edit";
+                        doc = routingDal.CreateXmlDocument(oprt);
+                        succeed = ConnectEAI(doc.OuterXml, out errText);
+                    }
                     if (!succeed) {
+                        MessageBoxPLM.Show(errText);
                         break;
                     }
                     BomDal bomDal = new BomDal(bItem);
                     doc = bomDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml);
+                    succeed = ConnectEAI(doc.OuterXml, out errText);
+                    if (!succeed && errText.Contains(hasStr)) {
+                        oprt = "Edit";
+                        doc = bomDal.CreateXmlDocument(oprt);
+                        succeed = ConnectEAI(doc.OuterXml, out errText);
+                    }
+                    if (!succeed) {
+                        MessageBoxPLM.Show(errText);
+                    }
                     break;
                 case "resourcedoc":
                     ResourceDal resourceDal = new ResourceDal(bItem);
                     doc = resourceDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml);
+                    succeed = ConnectEAI(doc.OuterXml, out errText);
+                    if (!succeed && errText.Contains(hasStr)) {
+                        oprt = "Edit";
+                        doc = resourceDal.CreateXmlDocument(oprt);
+                        succeed = ConnectEAI(doc.OuterXml, out errText);
+                    }
+                    if (!succeed) {
+                        MessageBoxPLM.Show(errText);
+                    }
                     break;
                 case "workcenters":
                     WorkCenterDal workCenterDal = new WorkCenterDal(bItem);
                     doc = workCenterDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml);
+                    succeed = ConnectEAI(doc.OuterXml, out errText);
+                    if (!succeed && errText.Contains(hasStr)) {
+                        oprt = "Edit";
+                        doc = workCenterDal.CreateXmlDocument(oprt);
+                        succeed = ConnectEAI(doc.OuterXml, out errText);
+                    }
+                    if (!succeed) {
+                        MessageBoxPLM.Show(errText);
+                    }
                     break;
+                    
             }
             ////如果没有导入成功，撤销定版
             //if (!succeed) {
@@ -374,7 +447,8 @@ namespace BOMExportClient {
         /// 导入到ERP
         /// </summary>
         /// <param name="xml"></param>
-        private bool ConnectEAI(string xml) {
+        private bool ConnectEAI(string xml, out string errText) {
+            errText = "";
             MSXML2.XMLHTTPClass xmlHttp = new MSXML2.XMLHTTPClass();
             xmlHttp.open("POST", "http://localhost/u8eai/import.asp", false, null, null);//TODO：地址需要改
             xmlHttp.send(xml);
@@ -386,7 +460,7 @@ namespace BOMExportClient {
             var s = ConstCommon.CURRENT_PRODUCTNAME;
 
             if (itemNode == null) {
-                MessageBoxPLM.Show("没有收到ERP回执！");
+                errText = "没有收到ERP回执";
 
                 PLMEventLog.WriteLog("没有收到ERP回执！", EventLogEntryType.Error);
                 System.Runtime.InteropServices.Marshal.FinalReleaseComObject(xmlHttp); //COM释放
@@ -397,7 +471,7 @@ namespace BOMExportClient {
             //var u8key =itemNode.Attributes["u8key"].ToString();
             //var proc = itemNode.Attributes["proc"].ToString();
             if (succeed != 0) {
-                MessageBoxPLM.Show(string.Format("ERP导入失败，原因：{0}",dsc));
+                errText = string.Format("ERP导入失败，原因：{0}", dsc);
 
                 PLMEventLog.WriteLog(dsc, EventLogEntryType.Error);
                 System.Runtime.InteropServices.Marshal.FinalReleaseComObject(xmlHttp); //COM释放

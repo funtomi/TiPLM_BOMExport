@@ -30,6 +30,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Interop.MSXML2, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+      <HintPath>..\Export\Interop.MSXML2.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Windows.Forms" />
@@ -73,6 +78,7 @@
   <ItemGroup>
     <Compile Include="BaseDal.cs" />
     <Compile Include="BomDal.cs" />
+    <Compile Include="ExportService.cs" />
     <Compile Include="InventoryClassDal.cs" />
     <Compile Include="InventoryDal.cs" />
     <Compile Include="OperationDal.cs" />

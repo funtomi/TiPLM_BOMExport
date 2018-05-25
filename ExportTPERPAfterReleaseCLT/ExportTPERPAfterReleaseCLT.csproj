@@ -37,10 +37,44 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="Thyt.TiPLM.Common, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Code\WebBrowser\WebBrowserPlug\Export\Thyt.TiPLM.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Thyt.TiPLM.Common.Interface, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Export\Thyt.TiPLM.Common.Interface.dll</HintPath>
+    </Reference>
+    <Reference Include="Thyt.TiPLM.DEL.Admin.NewResponsibility, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Export\Thyt.TiPLM.DEL.Admin.NewResponsibility.DLL</HintPath>
+    </Reference>
+    <Reference Include="Thyt.TiPLM.DEL.Product, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Export\Thyt.TiPLM.DEL.Product.DLL</HintPath>
+    </Reference>
+    <Reference Include="Thyt.TiPLM.PLL.Product2, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Export\Thyt.TiPLM.PLL.Product2.DLL</HintPath>
+    </Reference>
+    <Reference Include="Thyt.TiPLM.UIL.Common, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Export\Thyt.TiPLM.UIL.Common.DLL</HintPath>
+    </Reference>
+    <Reference Include="Thyt.TiPLM.UIL.Product.Common, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Export\Thyt.TiPLM.UIL.Product.Common.DLL</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="BomExportClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ExportBOMToERP\ExportBOMToERP.csproj">
+      <Project>{eb9afe3c-5247-4df3-bba5-c1a5eced4d9e}</Project>
+      <Name>ExportBOMToERP</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

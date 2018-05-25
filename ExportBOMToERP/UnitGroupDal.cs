@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using Thyt.TiPLM.DEL.Product;
 
@@ -47,12 +43,18 @@ namespace ExportBOMToERP {
             var dt = BuildElementDt();
             var row = dt.NewRow();
             foreach (DataColumn col in dt.Columns) {
-                if (col.ColumnName=="code") {
-                    row[col] = dEBusinessItem.Id;
-                    continue;
-                } 
                 var val = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
-                row[col] = val == null?DBNull.Value:val;
+                switch (col.ColumnName) {
+                    default:
+                        row[col] = val == null ? DBNull.Value : val;
+                        break;
+                    case "name":
+                        row[col] = dEBusinessItem.Name;
+                        break;
+                    case "type":
+                        row[col] = val == null ? 1 : val;
+                        break;
+                }
             }
             dt.Rows.Add(row);
             return dt;

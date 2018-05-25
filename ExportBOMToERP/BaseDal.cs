@@ -16,60 +16,6 @@ namespace ExportBOMToERP {
         protected string _name;
         protected string _filePath;
         protected List<string> _dateNames = new List<string>();
-        private string _eaiAddress;
-
-        protected string EaiAddress {
-            get {
-                if (string.IsNullOrEmpty(_eaiAddress)) {
-                    _eaiAddress= GetEAIConfig();
-                }
-                return _eaiAddress; }
-        }
-
-        /// <summary>
-        /// 获取可用ERP导出程序
-        /// </summary>
-        /// <param name="userOid"></param>
-        /// <returns></returns>
-        public string GetEAIConfig() {
-            string dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-            string[] cfgs = Directory.GetFiles(dir, "*config.xml");
-            if (cfgs == null || cfgs.Length == 0) {
-                MessageBoxPLM.Show("ERP导入配置没有配置在客户端！");
-                return null;
-            }
-            return CheckEAIConfig(cfgs[0]);
-        }
-
-        /// <summary>
-        /// 检查配置文件合法性
-        /// </summary>
-        /// <param name="fileName"></param>
-        /// <returns></returns>
-        private string CheckEAIConfig(string fileName) {
-            if (fileName == null) {
-                MessageBoxPLM.Show("ERP导入配置文件没有内容！");
-                return null;
-            }
-            if (!fileName.EndsWith(".xml")) {
-                MessageBoxPLM.Show("ERP导入配置文件格式不正确，只支持xml格式的配置！");
-                return null;
-            }
-            XmlDocument doc = new XmlDocument();
-            doc.Load(fileName);
-            var eaiAddNode = doc.SelectSingleNode("ERPIntegratorConfig//config");
-            if (eaiAddNode == null) {
-                MessageBoxPLM.Show("ERP导入配置文件没有EAI地址，请补充！");
-                return null;
-            }
-            var add = eaiAddNode.Value;
-            if (string.IsNullOrEmpty(add)) {
-                MessageBoxPLM.Show("ERP导入配置文件没有EAI地址，请补充！");
-                return null;
-            }
-            return add;
-        }
 
         /// <summary>
         /// 构建保存路径
@@ -239,5 +185,7 @@ namespace ExportBOMToERP {
             doc.SelectSingleNode(path).AppendChild(node.FirstChild);
             return doc;
         }
+
+        
     }
 }

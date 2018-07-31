@@ -43,12 +43,15 @@ namespace ExportBOMToERP {
             var dt = BuildElementDt();
             var row = dt.NewRow();
             foreach (DataColumn col in dt.Columns) {
-                if (col.ColumnName == "code") {
-                    row[col] = dEBusinessItem.Id;
-                    continue;
-                }
                 var val = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
-                row[col] = val == null ? DBNull.Value : val;
+                switch (col.ColumnName) {
+                    default:
+                        row[col] = val == null ? DBNull.Value : val;
+                        break;
+                    case "group_code":
+                        row[col] = val == null ? "01" : val;
+                        break;
+                }
             }
             dt.Rows.Add(row);
             return dt;
@@ -64,10 +67,10 @@ namespace ExportBOMToERP {
             dt.Columns.Add("name");//	计量单位名称
             dt.Columns.Add("group_code");//	计量单位组编码
             dt.Columns.Add("barcode");//	对应条形码中的编码
-            dt.Columns.Add("main_flag",typeof(int));//	主计量单位标志（是否主计量单位）
-            dt.Columns.Add("changerate",typeof(decimal));//	换算率
+            dt.Columns.Add("main_flag", typeof(int));//	主计量单位标志（是否主计量单位）
+            dt.Columns.Add("changerate", typeof(decimal));//	换算率
             dt.Columns.Add("portion", typeof(decimal));//	合理浮动比例
-            dt.Columns.Add("SerialNum",typeof(int));//	辅计量单位序号
+            dt.Columns.Add("SerialNum", typeof(int));//	辅计量单位序号
             dt.Columns.Add("censingular");//	英文名称单数
             dt.Columns.Add("cenplural");//	英文名称复数
             dt.Columns.Add("cunitrefinvcode");//	对应存货编码

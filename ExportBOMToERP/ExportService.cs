@@ -57,12 +57,12 @@ namespace ExportBOMToERP {
             }
             XmlDocument doc = new XmlDocument();
             doc.Load(fileName);
-            var eaiAddNode = doc.SelectSingleNode("ERPIntegratorConfig//config");
+            var eaiAddNode = doc.SelectSingleNode("ERPIntegratorConfig//config//EAIAddress");
             if (eaiAddNode == null) {
                 MessageBoxPLM.Show("ERP导入配置文件没有EAI地址，请补充！");
                 return null;
             }
-            var add = eaiAddNode.Value;
+            var add = eaiAddNode.InnerText;
             if (string.IsNullOrEmpty(add)) {
                 MessageBoxPLM.Show("ERP导入配置文件没有EAI地址，请补充！");
                 return null;
@@ -76,110 +76,11 @@ namespace ExportBOMToERP {
                 return;
             }
             //string oprt = item.LastRevision > 1 ? "Edit" : "Add";
-            string oprt = "Add";
-            XmlDocument doc = new XmlDocument();
-            bool succeed = true;
-            string hasStr = "重复";
-            string errText = "";
-            switch (_bItem.ClassName.ToLower()) {
-                default:
-                    break;
-                case "unitgroup":
-                    UnitGroupDal unitGroupDal = new UnitGroupDal(_bItem);
-                    doc = unitGroupDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml, out errText);
-                    if (!succeed && errText.Contains(hasStr)) {
-                        oprt = "Edit";
-                        doc = unitGroupDal.CreateXmlDocument(oprt);
-                        succeed = ConnectEAI(doc.OuterXml, out errText);
-                    }
-                    break;
-                case "unit":
-                    UnitDal unitDal = new UnitDal(_bItem);
-                    doc = unitDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml, out errText);
-                    if (!succeed && errText.Contains(hasStr)) {
-                        oprt = "Edit";
-                        doc = unitDal.CreateXmlDocument(oprt);
-                        succeed = ConnectEAI(doc.OuterXml, out errText);
-                    }
-                    break;
-                case "inventoryclass":
-                    InventoryClassDal ivtryClassDal = new InventoryClassDal(_bItem);
-                    doc = ivtryClassDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml, out errText);
-                    if (!succeed && errText.Contains(hasStr)) {
-                        oprt = "Edit";
-                        doc = ivtryClassDal.CreateXmlDocument(oprt);
-                        succeed = ConnectEAI(doc.OuterXml, out errText);
-                    }
-                    break;
-                case "tipart":
-                case "tigz":
-                    InventoryDal ivtryDal = new InventoryDal(_bItem);
-                    doc = ivtryDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml, out errText);
-                    if (!succeed && errText.Contains(hasStr)) {
-                        oprt = "Edit";
-                        doc = ivtryDal.CreateXmlDocument(oprt);
-                        succeed = ConnectEAI(doc.OuterXml, out errText);
-                    }
-                    break;
-                case "operation":
-                case "gx":
-                    OperationDal operationDal = new OperationDal(_bItem);
-                    doc = operationDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml, out errText);
-                    if (!succeed && errText.Contains(hasStr)) {
-                        oprt = "Edit";
-                        doc = operationDal.CreateXmlDocument(oprt);
-                        succeed = ConnectEAI(doc.OuterXml, out errText);
-                    }
-                    break;
-                case "routing":
-                    RoutingDal routingDal = new RoutingDal(_bItem);
-                    doc = routingDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml, out errText);
-                    if (!succeed && errText.Contains(hasStr)) {
-                        oprt = "Edit";
-                        doc = routingDal.CreateXmlDocument(oprt);
-                        succeed = ConnectEAI(doc.OuterXml, out errText);
-                    }
-                    if (!succeed) {
-                        break;
-                    }
-                    BomDal bomDal = new BomDal(_bItem);
-                    doc = bomDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml, out errText);
-                    if (!succeed && errText.Contains(hasStr)) {
-                        oprt = "Edit";
-                        doc = bomDal.CreateXmlDocument(oprt);
-                        succeed = ConnectEAI(doc.OuterXml, out errText);
-                    }
-                    break;
-                case "resourcedoc":
-                    ResourceDal resourceDal = new ResourceDal(_bItem);
-                    doc = resourceDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml, out errText);
-                    if (!succeed && errText.Contains(hasStr)) {
-                        oprt = "Edit";
-                        doc = resourceDal.CreateXmlDocument(oprt);
-                        succeed = ConnectEAI(doc.OuterXml, out errText);
-                    }
-                    break;
-                case "workcenters":
-                    WorkCenterDal workCenterDal = new WorkCenterDal(_bItem);
-                    doc = workCenterDal.CreateXmlDocument(oprt);
-                    succeed = ConnectEAI(doc.OuterXml, out errText);
-                    if (!succeed && errText.Contains(hasStr)) {
-                        oprt = "Edit";
-                        doc = workCenterDal.CreateXmlDocument(oprt);
-                        succeed = ConnectEAI(doc.OuterXml, out errText);
-                    }
-                    break;
+            bool succeed;
+            string errText;
 
-            }
-            if (!succeed) {
+            succeed = DoExport(out errText, _bItem);
+            if (!succeed && !string.IsNullOrEmpty(errText)) {
                 MessageBoxPLM.Show(errText);
                 return;
             }
@@ -187,10 +88,52 @@ namespace ExportBOMToERP {
         }
 
         /// <summary>
+        /// 导入
+        /// </summary>
+        /// <param name="oprt"></param>
+        /// <param name="errText"></param>
+        /// <param name="bItem"></param>
+        private bool DoExport(out string errText, DEBusinessItem bItem) {
+            var exportResult = DoExportImplement(bItem, bItem.ClassName, out errText);
+            if (!exportResult) {
+                return false;
+            }
+            if (_bItem.ClassName.ToLower() == "gygck") {
+                return DoExportImplement(bItem, "Bom", out errText);
+            }
+
+            return true;
+        }
+
+        private bool DoExportImplement(DEBusinessItem bItem, string typeStr, out string errText) {
+            XmlDocument doc = new XmlDocument();
+            bool succeed = true;
+            errText = "";
+            string hasStr = "重复";
+            string oprt = "Add";
+            var dal = DalFactory.Instance.CreateDal(bItem, typeStr);
+            doc = dal.CreateXmlDocument(oprt);
+            if (doc==null) {
+                return false;
+            }
+            succeed = ConnectEAI(doc.OuterXml, out errText);
+            if (!succeed && errText.Contains(hasStr)) {
+                oprt = "Edit";
+                doc = dal.CreateXmlDocument(oprt);
+                succeed = ConnectEAI(doc.OuterXml, out errText);
+            }
+            return succeed;
+        }
+
+        /// <summary>
         /// 导入到ERP
         /// </summary>
         /// <param name="xml"></param>
         private bool ConnectEAI(string xml, out string errText) {
+            if (string.IsNullOrEmpty(xml)) {
+                errText = "";
+                return false;
+            }
             errText = "";
             MSXML2.XMLHTTPClass xmlHttp = new MSXML2.XMLHTTPClass();
             xmlHttp.open("POST", EaiAddress, false, null, null);//TODO：地址需要改

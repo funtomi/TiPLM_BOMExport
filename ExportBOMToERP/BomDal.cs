@@ -21,15 +21,17 @@ namespace ExportBOMToERP {
 
         protected override XmlDocument BuildXmlDocment(string operatorStr) {
             XmlDocument doc = CreateXmlSchema(_name, _dEBusinessItem, operatorStr);
-            var id = _dEBusinessItem.GetAttrValue(_dEBusinessItem.ClassName, "INVCODE");
-            if (id == null || string.IsNullOrEmpty(id.ToString())) {
+            string attr = "CODE";
+            var attrVal = _dEBusinessItem.GetAttrValue(_dEBusinessItem.ClassName, "INVCODE");
+            if (attr == null || string.IsNullOrEmpty(attr.ToString())) {
                 return doc;
             }
-            DEBusinessItem bomItem = GetItemById("PART", id.ToString());
+            DEBusinessItem bomItem = GetItemByAttr("PART", attrVal.ToString(), attr);
+            //DEBusinessItem bomItem = GetItemById("PART", id.ToString());
             if (bomItem == null) {
-                bomItem = GetItemById("TIGZ", id.ToString());
+                bomItem = GetItemByAttr("TIGZ", attrVal.ToString(), attr);
                 if (bomItem == null) {
-                    bomItem = GetItemById("TIPART", id.ToString());
+                    bomItem = GetItemByAttr("TIPART", attrVal.ToString(), attr);
                     if (bomItem == null) {
                         return doc;
                     }
@@ -54,6 +56,27 @@ namespace ExportBOMToERP {
             doc = BuildComponentXmlDocument(bomItem, _dEBusinessItem, doc);
 
             return doc;
+        }
+
+        private DEBusinessItem GetItemByAttr(string className, string val, string attr) {
+            if (string.IsNullOrEmpty(val)) {
+                return null;
+            }
+            //var item = PLItem.Agent.GetBizItemByIteration((Guid)id, "TIPART", ClientData.UserGlobalOption.CurView, BPMClient.UserID, BizItemMode.SmartBizItem);
+            Hashtable ht = new Hashtable();
+            ht.Add("Id", val);
+            DEBusinessItem[] items = PLItem.Agent.GetLatestBizItemsByAttr(className, ht, BPMClient.UserID);
+            if (items == null || items.Length == 0) {
+                return null;
+            }
+            foreach (DEBusinessItem item in items) {
+                var attrVal = item.GetAttrValue(className, attr);
+                if (attrVal != null && attrVal.Equals(val)) {
+                    return item;
+                }
+            }
+            //DEBusinessItem item = items.First(p => p.Id == id.ToString());
+            return null;
         }
 
         /// <summary>
@@ -85,7 +108,7 @@ namespace ExportBOMToERP {
             if (bomItem == null || baseItem == null || doc == null) {
                 return doc;
             }
-            var linkItems = GetLinks(baseItem, "ROUTINGTOGX");//todo：修改关系名(工艺路线和工序)
+            var linkItems = GetLinks(baseItem, "GYGCKHGX");//todo：修改关系名(工艺路线和工序)
             if (linkItems == null || linkItems.Count == 0) {
                 return doc;
             }
@@ -97,7 +120,7 @@ namespace ExportBOMToERP {
                     continue;
                 }
                 var relation = linkItems.RelationList[i] as DERelation2;//工艺路线和工序关系
-                var links = GetLinks(item, "GXTOPART");//工序和零件
+                var links = GetLinks(item, "GXKWL");//工序和零件
                 if (links == null || links.Count == 0) {
                     continue;
                 }
@@ -210,7 +233,8 @@ namespace ExportBOMToERP {
                         row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "InvCode":
-                        row[col] = item.Id;
+                        val = item.GetAttrValue(item.ClassName, "CODE");
+                        row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "ParentScrap":
                         row[col] = val == null ? 0m : val;
@@ -263,11 +287,12 @@ namespace ExportBOMToERP {
                         row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "BomId":
-                        val = baseItem.GetAttrValue(baseItem.ClassName, col.ColumnName.ToUpper());
+                        val = baseItem.GetAttrValue(baseItem.ClassName, "BOMID");
                         row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "InvCode":
-                        row[col] = bomItem.Id;
+                        val = bomItem.GetAttrValue(bomItem.ClassName, "CODE");
+                        row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "SortSeq":
                     case "OptionsId":

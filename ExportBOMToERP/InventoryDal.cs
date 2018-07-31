@@ -19,15 +19,6 @@ namespace ExportBOMToERP {
             get { return _name; }
         }
 
-        public List<DataTable> GetInventoryDataList() {
-            if (_dEBusinessItem == null || string.IsNullOrEmpty(_name)) {
-                return null;
-            }
-            List<DataTable> list = new List<DataTable>();
-            DataTable headerTable = GetHeaderTable(_dEBusinessItem);
-            return list;
-        }
-
         /// <summary>
         /// 获取header节点数据
         /// </summary>
@@ -46,10 +37,7 @@ namespace ExportBOMToERP {
                 switch (col.ColumnName) {
                     default:
                         row[col] = val == null ? DBNull.Value : val;
-                        break;
-                    case "code":
-                        row[col] = dEBusinessItem.Id;
-                        break;
+                        break; 
                     case "CreatePerson":
                         row[col] = PrintUtil.GetUserName(dEBusinessItem.Creator);
                         break;
@@ -78,8 +66,6 @@ namespace ExportBOMToERP {
             dt.Rows.Add(row);
             return dt;
         }
-
-
 
         /// <summary>
         /// 创建Header节点结构
@@ -344,7 +330,6 @@ namespace ExportBOMToERP {
 
         private DataTable BuildEntryDt() {
             DataTable dt = new DataTable("entry");
-            dt.Columns.Add("");//
             dt.Columns.Add("partid");//	自增量。去掉<partid />,否则会导致通过xml导入存货结构自由项时，无法追加 后来要支持差异更新，partid不能去掉
             dt.Columns.Add("invcode");//	存货编码
             dt.Columns.Add("free1");//	自由项1
@@ -414,11 +399,11 @@ namespace ExportBOMToERP {
 
             #region 普通节点，默认ERP列名和PLM列名一致
             foreach (DataColumn col in dt.Columns) {
-                if (col.ColumnName == "invcode") {
-                    row[col] = dEBusinessItem.Id;
-                    continue;
-                }
+                
                 var val = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
+                if (col.ColumnName == "invcode") {
+                    val = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, "CODE");
+                }
                 row[col] = val == null ? DBNull.Value : val;
             }
             #endregion

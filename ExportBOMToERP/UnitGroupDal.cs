@@ -2,6 +2,7 @@
 using System.Data;
 using System.Xml;
 using Thyt.TiPLM.DEL.Product;
+using Thyt.TiPLM.UIL.Controls;
 
 namespace ExportBOMToERP {
     public class UnitGroupDal : BaseDal {
@@ -14,6 +15,9 @@ namespace ExportBOMToERP {
         protected override XmlDocument BuildXmlDocment(string operatorStr) {
             XmlDocument doc = CreateXmlSchema(_name, _dEBusinessItem, operatorStr);
             DataTable dt = GetDataTable(_dEBusinessItem);
+            if (dt == null || dt.Rows.Count == 0) {
+                return null;
+            }
             dt.WriteXml(_filePath);
             XmlDocument docTemp = new XmlDocument();
             docTemp.Load(_filePath);
@@ -37,7 +41,7 @@ namespace ExportBOMToERP {
         /// <param name="dEBusinessItem"></param>
         /// <returns></returns>
         private DataTable GetDataTable(DEBusinessItem dEBusinessItem) {
-            if (dEBusinessItem==null) {
+            if (dEBusinessItem == null) {
                 return null;
             }
             var dt = BuildElementDt();
@@ -48,11 +52,17 @@ namespace ExportBOMToERP {
                     default:
                         row[col] = val == null ? DBNull.Value : val;
                         break;
-                    case "name":
-                        row[col] = dEBusinessItem.Name;
-                        break;
                     case "type":
-                        row[col] = val == null ? 1 : val;
+                        if (val == null) {
+                            MessageBoxPLM.Show("计量单位组类别不可为空！");
+                            return null;
+                        }
+                        var cur = Convert.ToInt32(val);
+                        if (cur != 1 && cur != 2 && cur != 0) {
+                            MessageBoxPLM.Show("计量单位组类别输入类型不正确！只可填写0(无换算)、1(固定换算)、2(浮动)。");
+                            return null;
+                        }
+                        row[col] = val;
                         break;
                 }
             }
@@ -68,7 +78,7 @@ namespace ExportBOMToERP {
             DataTable dt = new DataTable(_name);
             dt.Columns.Add("code");//	计量单位组编码
             dt.Columns.Add("name");//	计量单位组名称
-            dt.Columns.Add("type",typeof(int));//组类别
+            dt.Columns.Add("type", typeof(int));//组类别
             dt.Columns.Add("cgrprelinvcode");//	对应存货编码
             dt.Columns.Add("bdefaultgroup", typeof(int));//	是否默认组
             return dt;

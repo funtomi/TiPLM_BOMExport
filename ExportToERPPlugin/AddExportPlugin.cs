@@ -12,6 +12,7 @@ using Thyt.TiPLM.PLL.Operation;
 using Thyt.TiPLM.PLL.Product2;
 using Thyt.TiPLM.UIL.Common;
 using Thyt.TiPLM.UIL.Common.Operation;
+using Thyt.TiPLM.UIL.Controls;
 using Thyt.TiPLM.UIL.Product.Common;
 
 namespace ExportToERPPluginCLT {
@@ -22,15 +23,22 @@ namespace ExportToERPPluginCLT {
 
         #region 插入操作内容
 
-        private const string OPERATION_ID = "PLM30_ExportToERP";
+        private const string OPERATION_ID = "PLM31_ExportToERP";
         private const string OPERATION_LABEL = "导入ERP";
         private const string OPERATION_TOOLTIP = "导入到ERP";
         private const string OPERATION_FILTER = "ExportToERPPluginCLT.dll,ExportToERPPluginCLT.ExportToERPFilter";
         private const string OPERATION_EVENTHANDLE = "ExportToERPPluginCLT.dll,ExportToERPPluginCLT.ExportHandlerHelper,OnExportToERP";
-        #endregion 
+        private const string ROOT_BI = "ROOTBI";
+        private const string SINGLE = "Single";
+        //OPERATION_BINDING_COLLECTION
+        private const string OBCOLLECTION_PRODUCT = "PLM";
+        private static List<string> OBCOLLECTION_CLASSNAME = new List<string>() { "PART", "BASEDOC", "GYGCK", "GXK" };
+        private static List<string> OBCOLLECTION_SENCE = new List<string>() { "CheckOutFolder", "CheckOutRootFolder", "ItemList", "PPCardTemplateList", "PublicFolder", "PublicRootFolder" };
+        private static List<string> OBCOLLECTION_MODE = new List<string>() { "Single" };
+        #endregion
 
         #region 初始化
-        
+
         public void Init() {
             #region 绑定定版后事件
             this.d_AfterReleased = new PLMBizItemDelegate(AfterItemReleased);
@@ -38,19 +46,91 @@ namespace ExportToERPPluginCLT {
             #endregion
 
             #region 添加右键菜单【导入到ERP】
-            
+
             var list = PLOperationDef.Agent.GetAllOperationItems(Guid.NewGuid());
-            if (list!=null&&list.Count!=0) {
+            if (list != null && list.Count != 0) {
                 var opItem = list.Find(p => p.Id == OPERATION_ID);
-                if (opItem==null) {
-                    DEOperationItem operationItem = new DEOperationItem() {
-                        Id = OPERATION_ID, Label = OPERATION_LABEL, Tooltip = OPERATION_TOOLTIP, Filter = OPERATION_FILTER, EventHandler = OPERATION_EVENTHANDLE, Option = 0
-                    };
-                    PLOperationDef.Agent.CreateOperationItem(operationItem, Guid.NewGuid());
-                        
+                if (opItem == null) {
+                    AddOperationItem();
+                    AddOperationBinding();
                 }
             }
             #endregion
+        }
+
+        /// <summary>
+        /// 添加操作类
+        /// </summary>
+        private void AddOperationItem() {
+            DEOperationItem operationItem = new DEOperationItem() {
+                Id = OPERATION_ID, Label = OPERATION_LABEL, Tooltip = OPERATION_TOOLTIP, Filter = OPERATION_FILTER, EventHandler = OPERATION_EVENTHANDLE, Option = 0
+            };
+            PLOperationDef.Agent.CreateOperationItem(operationItem, Guid.NewGuid());
+        }
+
+        private void AddOperationBinding() {
+            var cols = PLOperationDef.Agent.GetAllBindingCollection(new Guid());
+            //var oldCols = GetBindingCollections(cols);
+            //PLOperationDef.Agent.SaveBindingCollection
+            if (OBCOLLECTION_CLASSNAME.Count == 0) {
+                return;
+            }
+            try {
+                for (int i = 0; i < OBCOLLECTION_CLASSNAME.Count; i++) {
+                    for (int j = 0; j < OBCOLLECTION_SENCE.Count; j++) {
+                        for (int k = 0; k < OBCOLLECTION_MODE.Count; k++) {
+                            var col = CreateDEBindingOprt(OBCOLLECTION_CLASSNAME[i], OBCOLLECTION_MODE[k], OBCOLLECTION_SENCE[j], cols);
+                            PLOperationDef.Agent.SaveBindingCollection(col, Guid.NewGuid());
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                MessageBoxPLM.Show(ex.Message);
+            }
+        }
+
+        private List<DEBindingOperationCollection> GetBindingCollections(List<DEBindingOperationCollection> oldCols) {
+            if (oldCols == null || oldCols.Count == 0) {
+                return null;
+            }
+            List<DEBindingOperationCollection> cols = new List<DEBindingOperationCollection>();
+            foreach (DEBindingOperationCollection item in oldCols) {
+                if (OBCOLLECTION_SENCE.IndexOf(item.Scene) < 0 || OBCOLLECTION_MODE.IndexOf(item.Mode) < 0) {
+                    cols.Add(item);
+                    continue;
+                }
+                DEBindingOperationInfo info = new DEBindingOperationInfo();
+            }
+            return cols;
+        }
+
+        /// <summary>
+        /// 创建绑定项
+        /// </summary>
+        /// <param name="className"></param>
+        /// <param name="mode"></param>
+        /// <param name="scene"></param>
+        /// <returns></returns>
+        private DEBindingOperationCollection CreateDEBindingOprt(string className, string mode, string scene,List<DEBindingOperationCollection> oldCols) {
+            if (string.IsNullOrEmpty(className)) {
+                return null;
+            }
+            DEBindingOperationCollection col = new DEBindingOperationCollection() {
+                Product = OBCOLLECTION_PRODUCT, Mode = OperModeType.Single.ToString(), ClassName = className, Scene = scene
+            };
+            var oldCol = oldCols.Find(p => p.Scene == scene && (p.ClassName == ROOT_BI || p.ClassName == className));
+            if (oldCol!=null&&oldCol.OperationInfos!=null&&oldCol.OperationInfos.Count>0) {
+                col.OperationInfos.AddRange(oldCol.OperationInfos);
+            }
+            var currentCol=col.OperationInfos.Find(p=>p.Id==OPERATION_ID);
+            if (currentCol==null) {
+                DEBindingOperationInfo info = new DEBindingOperationInfo() {
+                    Id = OPERATION_ID, Order = 600
+                };
+                col.OperationInfos.Add(info);
+            }
+            
+            return col;
         }
 
         public void UnInit() {

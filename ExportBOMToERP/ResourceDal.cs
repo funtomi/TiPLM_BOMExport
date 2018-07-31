@@ -68,9 +68,6 @@ namespace ExportBOMToERP {
                     default:
                         row[col] = val == null ? DBNull.Value : val;
                         break;
-                    case "ResCode":
-                        row[col] = item.Id;
-                        break;
                     case "Description":
                         row[col] = item.Name;
                         break;
@@ -130,17 +127,13 @@ namespace ExportBOMToERP {
             var dt = BuildBodyDt();
             var row = dt.NewRow();
             foreach (DataColumn col in dt.Columns) {
-                var val = item.GetAttrValue(item.ClassName, col.ColumnName.ToUpper());
+                var val = baseItem.GetAttrValue(baseItem.ClassName, col.ColumnName.ToUpper());
                 var rltVal = relation.GetAttrValue(col.ColumnName.ToUpper());
                 switch (col.ColumnName) {
                     default:
                         row[col] = rltVal == null ? DBNull.Value : rltVal;
                         break;
-                    case "WcCode":
-                        row[col] = item.Id;
-                        break;
                     case "ResId":
-                         val = baseItem.GetAttrValue(baseItem.ClassName, col.ColumnName.ToUpper());
                         row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "Qty":
@@ -148,10 +141,10 @@ namespace ExportBOMToERP {
                         break;
                     case "KeyFlag":
                     case "FiniteScheduleRel":
-                        row[col] = rltVal == null ? false : rltVal;
+                        row[col] = rltVal == null ? 0 : rltVal;
                         break;
                     case "CrpFlag":
-                        row[col] = rltVal == null ? true : rltVal;
+                        row[col] = rltVal == null ? 1 : rltVal;
                         break;
                     case "UseRate":
                     case "EfficiencyRate":
@@ -174,11 +167,11 @@ namespace ExportBOMToERP {
             dt.Columns.Add("ResId", typeof(int));//	资源资料ID 	int
             dt.Columns.Add("WcCode");//	工作中心代号	nvarchar
             dt.Columns.Add("Qty", typeof(decimal));//	可用数量	Udt_QTY
-            dt.Columns.Add("KeyFlag", typeof(bool));//	关键资源	bit
-            dt.Columns.Add("CrpFlag", typeof(bool));//	计算产能	bit
+            dt.Columns.Add("KeyFlag", typeof(int));//	关键资源	bit
+            dt.Columns.Add("CrpFlag", typeof(int));//	计算产能	bit
             dt.Columns.Add("UseRate", typeof(decimal));//	利用率	Udt_Rate100
             dt.Columns.Add("EfficiencyRate", typeof(decimal));//	效率	Udt_Rate100
-            dt.Columns.Add("FiniteScheduleRel", typeof(bool));//	有限排程相关	bit
+            dt.Columns.Add("FiniteScheduleRel", typeof(int));//	有限排程相关	bit
             dt.Columns.Add("OverRate", typeof(decimal));//	超载百分比	Udt_Rate100
             dt.Columns.Add("Define22");//	表头自定义项22	nvarchar
             dt.Columns.Add("Define23	");//表头自定义项23	nvarchar

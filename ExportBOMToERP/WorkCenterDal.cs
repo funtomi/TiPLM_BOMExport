@@ -40,9 +40,6 @@ namespace ExportBOMToERP {
                     default:
                         row[col] = val == null ? DBNull.Value : val;
                         break;
-                    case "WcCode":
-                        row[col] = dEBusinessItem.Id;
-                        break;
                     case "Description":
                         row[col] = dEBusinessItem.Name;
                         break;
@@ -50,7 +47,7 @@ namespace ExportBOMToERP {
                         row[col] = "SYSTEM";
                         break;
                     case "ProductLineFlag":
-                        row[col] = val == null ? true : val;
+                        row[col] = val == null ? 1 : val;
                         break;
                 }
             }
@@ -68,7 +65,7 @@ namespace ExportBOMToERP {
             dt.Columns.Add("WcCode");//	工作中心代号  
             dt.Columns.Add("Description");//	名称  
             dt.Columns.Add("CalendarCode");//	行事历Id  （工作日历代号）
-            dt.Columns.Add("ProductLineFlag", typeof(bool));//	是否生产线  
+            dt.Columns.Add("ProductLineFlag", typeof(int));//	是否生产线  
             dt.Columns.Add("DeptCode");//隶属部门
             return dt;
         }

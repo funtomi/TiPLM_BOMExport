@@ -12,6 +12,7 @@ using Thyt.TiPLM.UIL.Controls;
 
 namespace ExportBOMToERP {
     public abstract class BaseDal {
+        private const string FILE_PATH="..\\ExportFiles";
         protected DEBusinessItem _dEBusinessItem;
         protected string _name;
         protected string _filePath;
@@ -24,8 +25,13 @@ namespace ExportBOMToERP {
         /// <param name="name"></param>
         /// <returns></returns>
         protected string BuildFilePath(DEBusinessItem item, string name) {
-            string fPath = Path.GetFullPath("..\\ExportFiles");
+            string fPath = Path.GetFullPath(FILE_PATH);
             string newFile = Path.Combine(fPath, item.Id + "_" + name + ".xml");
+            FileInfo info = new FileInfo(newFile);
+            var di =info.Directory;
+            if (!di.Exists) {
+                di.Create();
+            }
             return newFile;
         }
         private string GetFamilyStr(string tableName) {
@@ -101,7 +107,7 @@ namespace ExportBOMToERP {
         /// <param name="doc"></param>
         /// <returns></returns>
         private XmlDocument DateTimeFormat(XmlDocument doc, List<string> eles) {
-            if (eles == null || eles.Count == 0) {
+            if (eles == null || eles.Count == 0 || doc == null) {
                 return doc;
             }
             XmlDocument newDoc = new XmlDocument();

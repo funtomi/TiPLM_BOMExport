@@ -82,12 +82,6 @@ namespace ExportBOMToERP {
                     default:
                         row[col] = val == null ? DBNull.Value : val;
                         break;
-                    case "OpCode":
-                        row[col] = dEBusinessItem.Id;
-                        break;
-                    case "Description":
-                        row[col] = dEBusinessItem.Name;
-                        break;
                     case "WcCode":
                         row[col] = val == null ? DBNull.Value : val;
                         _hasRss = val != null;
@@ -173,18 +167,15 @@ namespace ExportBOMToERP {
                     default:
                         row[col] = rltVal == null ? DBNull.Value : rltVal;
                         break;
-                    case "OperationResId":
-                        row[col] = rltVal == null ? DBNull.Value : rltVal;
-                        break;
                     case "OperationId":
                         val = baseItem.GetAttrValue(baseItem.ClassName, col.ColumnName.ToUpper());
                         row[col] = val == null ? DBNull.Value : val;
                         break;
-                    case "ResCode":
-                        row[col] = item.Id;
-                        break;
                     case "BaseType":
                         row[col] = val == null ? 1 : val;
+                        break;
+                    case "EfficientRate":
+                        row[col] = val == null ? 100 : val;
                         break;
                 }
             }

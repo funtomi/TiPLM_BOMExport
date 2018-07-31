@@ -55,12 +55,20 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Export\Thyt.TiPLM.Common.Interface.dll</HintPath>
     </Reference>
+    <Reference Include="Thyt.TiPLM.DEL.Admin.DataModel, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Export\Thyt.TiPLM.DEL.Admin.DataModel.DLL</HintPath>
+    </Reference>
     <Reference Include="Thyt.TiPLM.DEL.Admin.NewResponsibility, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Export\Thyt.TiPLM.DEL.Admin.NewResponsibility.DLL</HintPath>
     </Reference>
     <Reference Include="Thyt.TiPLM.DEL.Product">
       <HintPath>..\Export\Thyt.TiPLM.DEL.Product.DLL</HintPath>
+    </Reference>
+    <Reference Include="Thyt.TiPLM.PLL.Admin.DataModel, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Export\Thyt.TiPLM.PLL.Admin.DataModel.DLL</HintPath>
     </Reference>
     <Reference Include="Thyt.TiPLM.PLL.Product2, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -78,6 +86,7 @@
   <ItemGroup>
     <Compile Include="BaseDal.cs" />
     <Compile Include="BomDal.cs" />
+    <Compile Include="DalFactory.cs" />
     <Compile Include="ExportService.cs" />
     <Compile Include="InventoryClassDal.cs" />
     <Compile Include="InventoryDal.cs" />

@@ -43,10 +43,6 @@ namespace ExportBOMToERP {
             var dt = BuildElementDt();
             var row = dt.NewRow();
             foreach (DataColumn col in dt.Columns) {
-                if (col.ColumnName == "code") {
-                    row[col] = dEBusinessItem.Id;
-                    continue;
-                }
                 var val = dEBusinessItem.GetAttrValue(dEBusinessItem.ClassName, col.ColumnName.ToUpper());
                 row[col] = val == null ? DBNull.Value : val;
             }

@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Thyt.TiPLM.DEL.Admin.DataModel;
 using Thyt.TiPLM.DEL.Product;
+using Thyt.TiPLM.PLL.Admin.DataModel;
 
 namespace ExportBOMToERP {
     public class DalFactory {
@@ -20,13 +22,13 @@ namespace ExportBOMToERP {
         /// <param name="typeStr"></param>
         /// <param name="item"></param>
         /// <returns></returns>
-        public BaseDal CreateDal(string typeStr,DEBusinessItem item) {
+        public BaseDal CreateDal(DEBusinessItem item,string typeStr) {
             if (item==null) {
                 return null;
             }
             BaseDal dal = null;
             BusinessType type;
-            var hasDefine= this.TryGetBusinessType(typeStr, out type);
+            var hasDefine = this.TryGetBusinessType(typeStr, out type);
             if (!hasDefine) {
                 return null;
             }
@@ -52,6 +54,12 @@ namespace ExportBOMToERP {
                 case BusinessType.WorkCenter:
                     dal = new WorkCenterDal(item);
                     break;
+                case BusinessType.Bom:
+                    dal = new BomDal(item);
+                    break;
+                case BusinessType.Operation:
+                    dal = new OperationDal(item);
+                    break;
             }
             return dal;
         }
@@ -68,8 +76,41 @@ namespace ExportBOMToERP {
                 return false;
             }
             switch (type.ToLower()) {
+                default:
+                    var parent = ModelContext.MetaModel.GetParent(type);
+                    if (parent==null) {
+                        return false;
+                    }
+                    return TryGetBusinessType(parent.Name, out businessType);
                 case "unit":
                     businessType = BusinessType.Unit;
+                    break;
+                case "unitgroup":
+                    businessType= BusinessType.UnitGroup;
+                    break;
+                case "inventoryclass":
+                    businessType = BusinessType.InventoryClass;
+                    break;
+                case "tipart":
+                case "tigz":
+                case "part":
+                    businessType = BusinessType.Inventory;
+                    break;
+                case "gxk":
+                case "gx":
+                    businessType = BusinessType.Operation;
+                    break;
+                case "gygck":
+                    businessType = BusinessType.Routing;
+                    break;
+                case "bom":
+                    businessType = BusinessType.Bom;
+                    break;
+                case "resourcedoc":
+                    businessType = BusinessType.Resource;
+                    break;
+                case "workcenters":
+                    businessType = BusinessType.WorkCenter;
                     break;
             }
             return true;
@@ -79,6 +120,6 @@ namespace ExportBOMToERP {
     }
 
     public enum BusinessType{
-        UnitGroup,Unit,Inventory,InventoryClass,Resource,Routing,WorkCenter
+        UnitGroup,Unit,Inventory,InventoryClass,Resource,Routing,WorkCenter,Bom,Operation
     }
 }

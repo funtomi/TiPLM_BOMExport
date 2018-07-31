@@ -39,7 +39,7 @@ namespace ExportBOMToERP {
             if (baseItem == null || doc == null) {
                 return doc;
             }
-            var linkItems = GetLinks(baseItem, "ROUTINGTOGX");//todo：修改关系名(工艺路线和工序)
+            var linkItems = GetLinks(baseItem, "GYGCKHGX");//todo：修改关系名(工艺路线和工序)
             if (linkItems == null || linkItems.Count == 0) {
                 return doc;
             }
@@ -257,9 +257,6 @@ namespace ExportBOMToERP {
                         val = baseItem.GetAttrValue(baseItem.ClassName, col.ColumnName.ToUpper());
                         row[col] = val == null ? DBNull.Value : val;
                         break;
-                    case "OperationCode":
-                         row[col] = item.Id;
-                        break;
                     case "PRoutingDId":
                         val = item.GetAttrValue(item.ClassName, "OPERATIONID");
                         row[col] = val == null ? DBNull.Value : val;
@@ -283,14 +280,14 @@ namespace ExportBOMToERP {
                     case "BFFlag":
                     case "FeeFlag":
                     case "PlanSubFlag":
-                        row[col] = val == null ? false : val;
+                        row[col] = rltVal == null ? false : val;
                         break;
                     case "DeliveryDays":
                     case "LtPercent":
-                        row[col] = val == null ? 0 : val;
+                        row[col] = rltVal == null ? 0 : val;
                         break;
                     case "ReportFlag":
-                        row[col] = val == null ? true : val;
+                        row[col] = rltVal == null ? true : val;
                         break;
                 }
             }

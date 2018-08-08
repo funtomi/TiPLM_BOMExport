@@ -61,10 +61,13 @@ namespace ExportBOMToERP {
                 doc.SelectSingleNode(path).AppendChild(doc.ImportNode(docTemp.DocumentElement, true).FirstChild);
                 //RoutingInsp
                 dt = GetRoutingInspDt(baseItem, item, relation);
-                dt.WriteXml(_filePath);
-                docTemp = new XmlDocument();
-                docTemp.Load(_filePath);
-                doc.SelectSingleNode(path).AppendChild(doc.ImportNode(docTemp.DocumentElement, true).FirstChild);
+                if (dt!=null) {
+                    dt.WriteXml(_filePath);
+                    docTemp = new XmlDocument();
+                    docTemp.Load(_filePath);
+                    doc.SelectSingleNode(path).AppendChild(doc.ImportNode(docTemp.DocumentElement, true).FirstChild);
+                }
+                
                 //RoutingRes
                 //dt = GetRoutingResDt(baseItem, item, relation);
                 //dt.WriteXml(_filePath);
@@ -262,6 +265,10 @@ namespace ExportBOMToERP {
                         row[col] = val == null ? DBNull.Value : val;
                         
                         break;
+                    case "OperationCode":
+                        val = item.GetAttrValue(item.ClassName, "OPCODE");
+                        row[col] = val == null ? DBNull.Value : val;
+                        break;
                     case "PRoutinginspId":
                         val = item.GetAttrValue(item.ClassName, "OPERATIONINSPID");
                         row[col] = val == null ? DBNull.Value : val;
@@ -337,7 +344,10 @@ namespace ExportBOMToERP {
                         break;
                     case "PRoutinginspId":
                         val = item.GetAttrValue(item.ClassName, "OPERATIONINSPID");
-                        row[col] = val == null ? DBNull.Value : val;
+                        if (val==null) {
+                            return null;
+                        }
+                        row[col] = val;
                         break;
                     case "OpTransType"://工序转移默认“手动”
                     case "QtMethod":

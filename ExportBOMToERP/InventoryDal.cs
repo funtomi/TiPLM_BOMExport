@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Xml;
+using Thyt.TiPLM.Common;
 using Thyt.TiPLM.DEL.Product;
 using Thyt.TiPLM.PLL.Product2;
+using Thyt.TiPLM.UIL.Controls;
 
 namespace ExportBOMToERP {
     public class InventoryDal : BaseDal {
@@ -364,6 +366,8 @@ namespace ExportBOMToERP {
             headerDt.WriteXml(_filePath);
             XmlDocument docTemp = new XmlDocument();
             docTemp.Load(_filePath);
+            //MessageBoxPLM.Show(docTemp.OuterXml);
+            //PLMEventLog.WriteLog(docTemp.OuterXml, System.Diagnostics.EventLogEntryType.Warning);
             var node = doc.ImportNode(docTemp.DocumentElement, true);
             string path = string.Format("ufinterface//{0}", _name);
             doc.SelectSingleNode(path).AppendChild(node.FirstChild);//append head节点

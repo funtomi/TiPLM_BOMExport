@@ -35,11 +35,14 @@ namespace ExportBOMToERP {
             //doc.SelectSingleNode(path).AppendChild(node.FirstChild);
             //OperationInsp
             dt = GetOperationInspDt(_dEBusinessItem);
-            dt.WriteXml(_filePath);
-            docTemp = new XmlDocument();
-            docTemp.Load(_filePath);
-            node = doc.ImportNode(docTemp.DocumentElement, true);
-            doc.SelectSingleNode(path).AppendChild(node.FirstChild);
+            if (dt!=null) {
+                dt.WriteXml(_filePath);
+                docTemp = new XmlDocument();
+                docTemp.Load(_filePath);
+                node = doc.ImportNode(docTemp.DocumentElement, true);
+                doc.SelectSingleNode(path).AppendChild(node.FirstChild);
+            }
+            
             return doc;
         }
 
@@ -222,7 +225,10 @@ namespace ExportBOMToERP {
                         row[col] = val == null ? DBNull.Value : val;
                         break;
                     case "QTMethod":
-                        row[col] = val == null ? 1 : val;
+                        if (val==null) {
+                            return null;
+                        }
+                        row[col] = val;
                         break;
                 }
             }

@@ -15,7 +15,8 @@ namespace ExportBOMToERP {
         }
         private DEBusinessItem _bItem;
         private string _eaiAddress;
-
+        //20180821 added by kexp 添加对已有且不需要导入的项定版时判断
+        private static string SYS_ERROR = "sys_error";
         protected string EaiAddress {
             get {
                 if (string.IsNullOrEmpty(_eaiAddress)) {
@@ -80,7 +81,11 @@ namespace ExportBOMToERP {
             string errText;
 
             succeed = DoExport(out errText, _bItem);
-            if (!succeed && !string.IsNullOrEmpty(errText)) {
+            //20180821 added by kexp 添加对已有且不需要导入的项定版时判断
+            if (!succeed) {
+                if (string.IsNullOrEmpty(errText)||errText.Equals(SYS_ERROR)) {
+                    return;
+                }
                 MessageBoxPLM.Show(errText);
                 return;
             }
@@ -112,6 +117,11 @@ namespace ExportBOMToERP {
             string hasStr = "重复";
             string oprt = "Add";
             var dal = DalFactory.Instance.CreateDal(bItem, typeStr);
+            //20180821 added by kexp 添加对已有且不需要导入的项定版时判断
+            if (dal==null) {
+                errText = SYS_ERROR;
+                return false;
+            }
             doc = dal.CreateXmlDocument(oprt);
             if (doc==null) {
                 return false;

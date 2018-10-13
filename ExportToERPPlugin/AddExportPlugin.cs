@@ -33,7 +33,8 @@ namespace ExportToERPPluginCLT {
         //OPERATION_BINDING_COLLECTION
         private const string OBCOLLECTION_PRODUCT = "PLM";
         private static List<string> OBCOLLECTION_CLASSNAME = new List<string>() { "PART", "BASEDOC", "GYGCK", "GXK" };
-        private static List<string> OBCOLLECTION_SENCE = new List<string>() { "CheckOutFolder", "CheckOutRootFolder", "ItemList", "PPCardTemplateList", "PublicFolder", "PublicRootFolder" };
+        private static List<string> OBCOLLECTION_SENCE = new List<string>() { "CheckOutFolder", "CheckOutRootFolder", "ItemList", "PPCardTemplateList", "PublicFolder", "PublicRootFolder","RelationTreeRoot"
+,"RelationTreeChild"};
         private static List<string> OBCOLLECTION_MODE = new List<string>() { "Single" };
         #endregion
 
@@ -52,8 +53,8 @@ namespace ExportToERPPluginCLT {
                 var opItem = list.Find(p => p.Id == OPERATION_ID);
                 if (opItem == null) {
                     AddOperationItem();
-                    AddOperationBinding();
                 }
+                AddOperationBinding();
             }
             #endregion
         }
@@ -151,7 +152,7 @@ namespace ExportToERPPluginCLT {
                         var bItem = BusinessHelper.Instance.GetDEBusinessItem(item);
                         //var ss = OperationConfigHelper.Instance;
 
-                        BusinessHelper.Instance.ExportToERP(bItem);
+                        BusinessHelper.Instance.ExportToERP(bItem,true);
                     }
                 }
             }

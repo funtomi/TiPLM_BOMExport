@@ -57,5 +57,16 @@ namespace ExportToERPPluginCLT {
             ExportService srv = new ExportService(bItem);
             srv.AddOrEditItem();
         }
+
+        public void ExportToERP(DEBusinessItem bItem, bool isRelease) {
+            if (!isRelease) {
+                var state = bItem.State;
+                if (state!= ItemState.Release) {
+                    MessageBoxPLM.Show(string.Format("{0}没有定版，不能直接导入ERP！", bItem.Name));
+                    return;
+                }
+            }
+            ExportToERP(bItem);
+        }
     }
 }

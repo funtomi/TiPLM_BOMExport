@@ -13,7 +13,7 @@ namespace ExportToERPPluginCLT {
           if (((args != null) && (args.BizItems != null)) && (args.BizItems.Length != 0)) {
               IBizItem item = args.BizItems[0];
               var bItem = BusinessHelper.Instance.GetDEBusinessItem(item);
-              BusinessHelper.Instance.ExportToERP(bItem);
+              BusinessHelper.Instance.ExportToERP(bItem,false);
               //DEBusinessItem theItem = PSConvert.ToBizItem(args.BizItems[0], args.Option.CurView, ClientData.LogonUser);
               
           }

@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Xml;
 using Thyt.TiPLM.Common;
 using Thyt.TiPLM.DEL.Product;
+using Thyt.TiPLM.PLL.Admin.DataModel;
 using Thyt.TiPLM.UIL.Common;
 using Thyt.TiPLM.UIL.Controls;
 
@@ -15,6 +16,7 @@ namespace ExportBOMToERP {
         }
         private DEBusinessItem _bItem;
         private string _eaiAddress;
+        private string _sender;
         //20180821 added by kexp 添加对已有且不需要导入的项定版时判断
         private static string SYS_ERROR = "sys_error";
         protected string EaiAddress {
@@ -68,6 +70,11 @@ namespace ExportBOMToERP {
                 MessageBoxPLM.Show("ERP导入配置文件没有EAI地址，请补充！");
                 return null;
             }
+            // added by kexp获取sender
+            var senderNode = doc.SelectSingleNode("ERPIntegratorConfig//config//Sender");
+            if (senderNode!=null||!string.IsNullOrEmpty(senderNode.InnerText)) {
+                _sender = senderNode.InnerText;
+            }
             return add;
         }
         #region 导出导入
@@ -82,10 +89,7 @@ namespace ExportBOMToERP {
 
             succeed = DoExport(out errText, _bItem);
             //20180821 added by kexp 添加对已有且不需要导入的项定版时判断
-            if (!succeed) {
-                if (string.IsNullOrEmpty(errText)||errText.Equals(SYS_ERROR)) {
-                    return;
-                }
+            if (!succeed&&!string.IsNullOrEmpty(errText)&&!errText.Equals(SYS_ERROR)) { 
                 MessageBoxPLM.Show(errText);
                 return;
             }
@@ -103,6 +107,7 @@ namespace ExportBOMToERP {
             if (!exportResult) {
                 return false;
             }
+
             if (_bItem.ClassName.ToLower() == "gygck") {
                 return DoExportImplement(bItem, "Bom", out errText);
             }
@@ -145,8 +150,10 @@ namespace ExportBOMToERP {
                 return false;
             }
             errText = "";
+            var add = EaiAddress;
+            xml = ModifyXmlHeaderByConfig(xml);
             MSXML2.XMLHTTPClass xmlHttp = new MSXML2.XMLHTTPClass();
-            xmlHttp.open("POST", EaiAddress, false, null, null);//TODO：地址需要改
+            xmlHttp.open("POST", add, false, null, null);//TODO：地址需要改
             xmlHttp.send(xml);
             String responseXml = xmlHttp.responseText;
             //…… //处理返回结果 
@@ -176,6 +183,22 @@ namespace ExportBOMToERP {
             }
             System.Runtime.InteropServices.Marshal.FinalReleaseComObject(xmlHttp); //COM释放
             return true;
+        }
+
+        private string ModifyXmlHeaderByConfig(string xml) {
+            if (string.IsNullOrEmpty(xml)||_sender==null) {
+                return xml;
+            }
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(xml);
+            var sender = (XmlElement)doc.SelectSingleNode("ufinterface");
+            if (sender == null || string.IsNullOrEmpty(sender.Attributes["sender"].ToString())) {
+                return xml;
+            }
+            //sender.SetAttribute("sender", _sender);
+            xml = xml.Replace("sender=\"001\"", string.Format("sender=\"{0}\"", _sender));
+            return xml;
+
         }
         #endregion
     }

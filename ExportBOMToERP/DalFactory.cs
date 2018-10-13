@@ -99,9 +99,9 @@ namespace ExportBOMToERP {
                 case "gxk":
                 case "gx":
                     businessType = BusinessType.Operation;
-                    break;
+                    break; 
                 case "gygck":
-                    businessType = BusinessType.Routing;
+                  businessType = BusinessType.Routing;
                     break;
                 case "bom":
                     businessType = BusinessType.Bom;
